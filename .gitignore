@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.pyright/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Environment and secrets (keep uv.lock tracked)
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Node / TypeScript (future integrations/clients)
+node_modules/
+.npm/
+.turbo/
+.next/
+out/
+
+# Editors / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Local runtime state and large data
+.data/
+volumes/
+postgres-data/
+redis-data/
+ollama-data/
+models/
+model-cache/
+artifacts/
+logs/
+tmp/
