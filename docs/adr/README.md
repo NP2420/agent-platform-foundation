@@ -17,7 +17,9 @@ One file per material decision. An ADR is never edited to reverse a decision: wr
 | [0011](0011-file-agent-reference-use-case.md) | File agent as the reference use case | Accepted |
 | [0012](0012-portable-deployment.md) | Portable, cloud-ready deployment shape | Accepted |
 | [0013](0013-pull-request-workflow.md) | Branches, pull requests, and CI | Accepted |
-| [0014](0014-python-toolchain.md) | Python 3.15, uv, Ruff, mypy, pytest, CI | Accepted |
+| [0014](0014-python-toolchain.md) | Python 3.15, uv, Ruff, pytest, CI | Accepted; type checker superseded by 0015 |
+| [0015](0015-pyright.md) | Pyright as the type checker | Accepted |
+| [0016](0016-pydantic-domain-types.md) | Pydantic for domain types | Accepted |
 
 ## Writing one
 

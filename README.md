@@ -43,7 +43,7 @@ Requires [uv](https://docs.astral.sh/uv/) 0.13.x. From WSL, in a clone on the Li
 uv sync                      # Python 3.15 and dev tools, exactly as locked
 uv run ruff format --check . # formatting
 uv run ruff check .          # lint
-uv run mypy                  # types (strict)
+uv run pyright               # types (strict)
 uv run pytest                # tests
 ```
 

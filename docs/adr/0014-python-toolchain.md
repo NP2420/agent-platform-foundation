@@ -1,6 +1,6 @@
 # ADR 0014: Python 3.15 and the Toolchain
 
-- **Status:** Accepted
+- **Status:** Accepted; the type-checker choice is superseded by [ADR 0015](0015-pyright.md)
 - **Date:** 2026-11-26
 
 ## Context

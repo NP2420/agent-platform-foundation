@@ -66,6 +66,10 @@ Benchmarked the dev loop on `/mnt/c` vs WSL ext4: 82.8 s vs 1.5 s in total, 19.2
 
 CPython 3.14.10 and 3.15.2 both installed the full planned dependency set from prebuilt wheels with source builds disabled, including later candidates temporalio and pgvector; Ruff and mypy accept 3.15 as a target. Chose 3.15, uv, Ruff, strict mypy, pytest, and GitHub Actions pinned to commit SHAs. → [ADR 0014](adr/0014-python-toolchain.md)
 
+### 2026-11-26: Type checker and domain types
+
+Compared mypy, Pyright, ty, and Pyrefly. Pyright has much higher typing-spec conformance than mypy; current mypy is faster than Pyright; ty is still 0.0.x with no stable API. The earlier objection to Pyright, a Node download at first run, disappears with the `pyright[nodejs]` extra. Owner chose Pyright ([ADR 0015](adr/0015-pyright.md)). For domain types the owner chose Pydantic over dataclasses or attrs; Pydantic is already required by the Anthropic SDK, the MCP SDK, and FastAPI ([ADR 0016](adr/0016-pydantic-domain-types.md)). → [pydevtools comparison](https://pydevtools.com/handbook/explanation/how-do-mypy-pyright-and-ty-compare/)
+
 ## Entry template
 
 ```markdown

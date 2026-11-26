@@ -111,7 +111,7 @@ sequenceDiagram
 
 ## Dependency rules
 
-- `domain` imports no framework, ORM, provider SDK, MCP SDK, or Temporal code.
+- `domain` imports only the standard library and Pydantic ([ADR 0016](adr/0016-pydantic-domain-types.md)): no web framework, ORM, provider SDK, MCP SDK, or Temporal code.
 - `application` defines use cases and ports; infrastructure implements the ports.
 - `runtime` reaches models through model ports and tools through the dispatcher port.
 - `orchestration` is deterministic for a given plan, state, and input. Plan validation never calls a model.
