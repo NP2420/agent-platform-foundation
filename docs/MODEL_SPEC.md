@@ -84,6 +84,26 @@ Initial work:
 - verify whether parallel tool calls are returned and how they are represented;
 - test behavior under timeout and server restart.
 
+## 6A. Observed initial Ollama deployment (2026-11-25)
+
+The initial local serving deployment is Windows-hosted Ollama `0.40.18`, reached by the Ubuntu WSL2 runtime at `http://127.0.0.1:11434`. WSL mirrored networking is enabled and this path has been tested successfully. Ollama remains bound to Windows loopback; do not expose it on all interfaces merely to make WSL connectivity work.
+
+The host has an RTX 4050 Laptop GPU with 6,141 MiB reported VRAM and 15.68 GiB physical RAM. At 4K context, both `qwen3:4b-q4_K_M` and `nemotron-3-nano:4b` were reported as 100% GPU in `ollama ps`. A three-run exploratory warm-inference sample averaged 57.03 tok/s for Qwen3 4B and 61.08 tok/s for Nemotron 4B. One simple tool-call smoke test per model returned the expected weather function and arguments. These results are preliminary and do not select final model profiles.
+
+The exact evidence, caveats, and next experiments are in `research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md` and `research/ENVIRONMENT_BASELINE_2026-11-25.md`.
+
+### Initial endpoint configuration
+
+Keep the provider adapter configurable through application configuration, for example `OLLAMA_BASE_URL=http://127.0.0.1:11434`. The application must not hard-code Windows networking details. A future Linux-hosted Ollama, llama.cpp, vLLM, or remote provider should be selectable through deployment configuration and an adapter without changing runtime semantics.
+
+### Model-selection status
+
+- `qwen3:4b-q4_K_M`: leading primary candidate for further functional evaluation.
+- `nemotron-3-nano:4b`: leading efficiency/secondary candidate for further functional evaluation.
+- `qwen3:8b`: larger quality-reference candidate; the initial 4K measurement showed partial CPU/GPU placement and approximately 12.59 warm tok/s, but it was not tested under the same repeated protocol.
+
+These are candidate labels, not final role assignments. Do not route real sensitive or side-effecting work based on these observations. Security and tool authorization remain deterministic runtime responsibilities.
+
 ## 7. Other serving options
 
 - **llama.cpp:** investigate for GGUF quantization/control and CPU/local-device flexibility.

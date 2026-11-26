@@ -1,6 +1,6 @@
 # Documentation Index
 
-**Document set:** 0.1.0 · **Baseline:** 2026-11-25
+**Document set:** 0.2.0 · **Updated:** 2026-11-25
 
 This documentation is the durable project reference. Each document distinguishes agreed direction from proposals and unresolved decisions. The implementation must not silently turn an open question into an architectural commitment.
 
@@ -36,7 +36,10 @@ This documentation is the durable project reference. Each document distinguishes
 - [File manifest](FILE_MANIFEST.md) — generated inventory and SHA-256 checksums for this document baseline.
 - [PostgreSQL 18 vs 19 evaluation](research/POSTGRES_18_VS_19.md).
 - [Local execution sandbox options](research/LOCAL_SANDBOX_OPTIONS.md).
+- [Local environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md).
 - [Local model baseline and benchmark plan](research/LOCAL_MODEL_BASELINE.md).
+- [Initial Ollama inference and tool-call measurements](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md).
+- [ADR 0010: Windows-hosted Ollama](adr/0010-windows-hosted-ollama-initial-deployment.md).
 - [Architecture Decision Records](adr/) — accepted directions, proposals, and decisions deliberately left open.
 
 ## Status vocabulary

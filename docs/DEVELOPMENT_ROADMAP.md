@@ -2,6 +2,20 @@
 
 **This is a gated sequence, not a calendar promise.** Each phase is completed in small implementation chunks. A phase does not advance merely because code exists; its research, design, verification, and reflection gates must be satisfied.
 
+## Current project status (updated 2026-11-25)
+
+| Checkpoint | Status | Evidence / next action |
+|---|---|---|
+| Phase 0.1 — Host and container environment | **Completed for initial host** | Windows/WSL hardware, OS, storage, Docker Desktop, cgroup and namespace observations recorded in `research/ENVIRONMENT_BASELINE_2026-11-25.md`. Revisit if host configuration changes. |
+| Phase 0.2 — Inference topology | **Initial choice accepted** | Windows-hosted Ollama reached from WSL through mirrored networking; ADR 0010. Linux-hosted/remote alternatives remain replaceable. |
+| Phase 0.3 — Local model screening | **In progress** | Qwen3 4B and Nemotron 4B measured at 4K and passed one simple tool-call smoke test; no model role selected. See `research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md`. |
+| Phase 0.4 — Sandbox host feasibility | **Open** | `/dev/kvm` exists but is not accessible to the current user; namespace/cgroup presence is not a complete sandbox validation. Threat model and negative tests remain required. |
+| Phase 0.5 — Python/toolchain compatibility | **Open** | WSL system Python 3.14.4 observed; uv and Linux-native Node are not installed. Select project Python only after dependency compatibility checks. |
+| Phase 0.6 — Database version | **Open** | PostgreSQL 18 vs 19 compatibility and workload comparison not started. |
+| Phase 0.7 — Architecture review | **Open** | Reconcile measured host constraints with the system/threat model and confirm Phase 1 acceptance criteria. |
+
+**Current guardrail:** do not begin the application runtime implementation yet. Complete the remaining Phase 0 research/decision gates first. The model screen is intentionally a preliminary investigation and must not be described as final agent evaluation.
+
 ## 1. Working cycle for every phase
 
 1. **Discover:** identify the concrete problem, constraints, and unknowns.

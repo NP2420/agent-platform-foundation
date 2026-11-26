@@ -66,3 +66,32 @@ Record exact model tag/digest, Ollama version, quantization, prompt/agent versio
 ## 6. Selection rule
 
 Select the smallest/fastest model that meets the task's measured quality/safety requirement, not the smallest model that merely returns syntactically valid output. Use a stronger model/escalation path for difficult or high-impact tasks only when it measurably improves outcomes. Evaluator models require calibration and must not be the sole authority for security decisions.
+
+
+## 7. Observed local environment and candidate results (2026-11-25)
+
+The initial development host is Windows 11 Home + Ubuntu 26.04.1 under WSL2, with an NVIDIA RTX 4050 Laptop GPU (6,141 MiB) and 15.68 GiB physical RAM. Windows-hosted Ollama `0.40.18` is reachable from WSL at `http://127.0.0.1:11434` after WSL mirrored networking was enabled. The detailed environment record is `ENVIRONMENT_BASELINE_2026-11-25.md`.
+
+The first candidate tags are:
+
+- `qwen3:4b-q4_K_M` — Q4_K_M, 4.0B parameters, tools and thinking advertised by `ollama show`.
+- `nemotron-3-nano:4b` — Q4_K_M, 4.0B parameters, tools and thinking advertised by `ollama show`.
+- `qwen3:8b` — Q4_K_M, 8.2B parameters, tools and thinking advertised by `ollama show`; retained as a larger reference candidate.
+
+At 4K context, both 4B models were reported by `ollama ps` as 100% GPU. Qwen3 4B used 3.3 GB reported allocation and averaged 57.03 tok/s over three warm runs. Nemotron 4B used 2.8 GB and averaged 61.08 tok/s over three warm runs. The samples are exploratory and not sufficient for a final model assignment. Qwen3 8B's separate preliminary test showed 6.0 GB allocation and 30% CPU / 70% GPU placement at 4K; it was not rerun under the identical three-run protocol.
+
+One single-prompt tool-call smoke test per 4B model succeeded: both selected `get_current_weather` and returned `Boston` and `fahrenheit` when given that request and a distractor product-search tool. This is not a reliability estimate.
+
+Full request settings, output, timing caveats, and next tests are recorded in [`OLLAMA_MODEL_BENCHMARKS_2026-11-25.md`](OLLAMA_MODEL_BENCHMARKS_2026-11-25.md).
+
+## 8. Current provisional interpretation
+
+- Qwen3 4B is the leading primary-agent candidate for further evaluation, not a selected production model.
+- Nemotron 3 Nano 4B is a strong efficiency/secondary-model candidate for further evaluation, not a selected production model.
+- The difference in three-run warm generation throughput (about 7.1% in favor of Nemotron) is not enough to choose a model; functional quality and safety behavior matter more.
+- Both 4B models fit at 4K context. Higher context and concurrent requests may increase memory demand substantially; measure them explicitly.
+- Qwen3 8B remains a quality comparison candidate, but the observed partial CPU placement makes it less attractive for the default interactive workload on this machine.
+
+## 9. Next tests before model selection
+
+Continue with multiple tool-use cases: single-tool selection with distractors, argument extraction, no-tool/clarification behavior, multiple calls, tool-result round trips, tool error recovery, and prompt injection in untrusted tool output. Do not execute real side effects during model-only evaluations. After tool behavior is measured, test fixed-output performance and 4K/8K context resource use, then review whether 16K is practical.

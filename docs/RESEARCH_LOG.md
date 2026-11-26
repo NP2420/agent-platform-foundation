@@ -59,11 +59,11 @@ This log records material findings that inform the architecture. It is not a per
 
 | ID | Question | Required evidence | Planned phase |
 |---|---|---|---|
-| R-001 | Host OS, kernel, hardware, container backend? | Local environment inspection | 0 |
+| R-001 | Host OS, kernel, hardware, container backend? | Local environment inspection | 0 — initial baseline completed; revisit on host changes |
 | R-002 | Python 3.14 vs 3.15? | Dependency support matrix, toolchain tests | 0–1 |
 | R-003 | PostgreSQL 18.7 vs 19.0? | Compatibility + representative benchmark | 7 |
 | R-004 | psycopg 3 vs asyncpg? | Compatibility, migration, concurrency tests | 7 |
-| R-005 | Which Ollama models and quantizations? | Reproducible model benchmark | 3 |
+| R-005 | Which Ollama models and quantizations? | Reproducible tool/task benchmark and resource measurements | 0/3 — exploratory benchmark underway; no final selection |
 | R-006 | Which sandbox backend? | Host-specific threat model and negative tests | 10 |
 | R-007 | MCP SDK/protocol version? | Current release notes, migration guide, compatibility test | 9 |
 | R-008 | When is Temporal justified? | Workflow durability requirements and failure-injection comparison | 15 |
@@ -86,3 +86,35 @@ This log records material findings that inform the architecture. It is not a per
 - Decision status / ADR:
 - Revisit trigger:
 ```
+
+
+## 2026-11-25 — WSL2 environment and Docker integration
+
+- **Question:** Can the existing Windows/WSL2 laptop serve as the local development and inference environment, and what host constraints affect the design?
+- **Verified facts:** Windows 11 Home build 26300; Ubuntu 26.04.1 LTS under WSL2; Linux kernel `6.18.58.1-microsoft-standard-WSL2`; Intel Core i7-13700H (14 cores / 20 logical processors); 15.68 GiB physical RAM; NVIDIA RTX 4050 Laptop GPU with 6,141 MiB reported VRAM. WSL showed 7.6 GiB RAM and 2 GiB swap. systemd, cgroup v2, user namespaces, and `/dev/dxg` were present. `/dev/kvm` was present but not readable/writable by the current user. The inspected shell showed `Seccomp=0` and `NoNewPrivs=0`; these values apply only to that process and are not evidence about container restrictions.
+- **Docker observation:** Docker Desktop 4.100.1 / Engine 29.9.3 was running with the WSL2 backend. Per-distro WSL integration was enabled for `Ubuntu-26.04`; WSL's Linux Docker CLI then successfully reached the engine, which reported cgroup v2.
+- **Filesystem constraint:** Windows C: had 70.27 GiB free in the later measurement. WSL's ext4 reported roughly 1 TB virtual capacity; this must not be interpreted as host physical free space. Keep active repository files on the WSL ext4 filesystem unless a specific Windows integration requires otherwise.
+- **Toolchain observation:** WSL had Python 3.14.4 but no pip module or uv; Node.js was absent inside WSL while `npm` resolved to the Windows installation on `/mnt/c`; Go and Rust were absent. No project dependency version is selected yet.
+- **Interpretation:** WSL2 is a viable development environment, but local resources are constrained. Avoid concurrent model residency and the full infrastructure stack until measured. KVM sandbox feasibility remains open. Resolve the Windows npm path leak before introducing Node tooling.
+- **Decision status:** environment baseline recorded; use Ubuntu/WSL2 as primary development environment; Docker Desktop WSL integration verified. See `research/ENVIRONMENT_BASELINE_2026-11-25.md`.
+- **Sources:** [Microsoft WSL networking](https://learn.microsoft.com/en-us/windows/wsl/networking), [Microsoft WSL configuration](https://learn.microsoft.com/en-us/windows/wsl/wsl-config), [Docker WSL best practices](https://docs.docker.com/desktop/features/wsl/best-practices/), [Docker WSL integration](https://docs.docker.com/desktop/features/wsl/).
+
+## 2026-11-25 — Windows-hosted Ollama through WSL mirrored networking
+
+- **Question:** Should initial local inference run in Windows or inside WSL?
+- **Verified facts:** Windows-hosted Ollama `0.40.18` was listening on `127.0.0.1:11434`. Under the initial NAT arrangement, WSL could not reach either its localhost endpoint or the Windows host IP. After configuring `[wsl2] networkingMode=mirrored` in `.wslconfig` and restarting WSL, the request `curl http://127.0.0.1:11434/api/version` from Ubuntu succeeded. The configured `OLLAMA_MODELS` path was `C:\Users\<user>\OLLAMA` and its recursive file-size measurement was 27.05 GB. An earlier 3.11 GB measurement used the inactive default `.ollama\models` path and is not the correct storage measurement.
+- **Alternatives:** Ollama hosted in WSL (Linux-local service but duplicate model storage and WSL memory use); Windows Ollama with NAT and a wider listener/firewall configuration; containerized inference.
+- **Interpretation:** Windows-hosted Ollama is the lowest-friction initial choice for this machine. Mirrored localhost connectivity avoids widening the listener. The provider endpoint must remain configurable so the environment can change later.
+- **Decision status:** accepted for initial development environment; not a production deployment commitment. ADR 0010.
+- **Sources:** [Microsoft WSL networking](https://learn.microsoft.com/en-us/windows/wsl/networking), [Microsoft WSL configuration](https://learn.microsoft.com/en-us/windows/wsl/wsl-config), [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md).
+
+## 2026-11-25 — Initial local model inference and tool-call smoke tests
+
+- **Question:** Which local models fit the RTX 4050 and can produce usable tool-call proposals?
+- **Experiment:** Ollama `0.40.18`; Windows-hosted; RTX 4050 Laptop GPU, 6,141 MiB; Q4_K_M candidates `qwen3:4b-q4_K_M` and `nemotron-3-nano:4b`; 4K context; sequential requests; `think=false`; temperature 0; seed 42. A preliminary `qwen3:8b` observation was also captured.
+- **Verified facts:** `ollama ps` reported Qwen3 4B and Nemotron 4B as 100% GPU at 4K context with 3.3 GB and 2.8 GB allocations respectively. Three warm runs averaged 57.03 tok/s for Qwen3 4B and 61.08 tok/s for Nemotron 4B. The Qwen3 requests hit the 128-token output cap; Nemotron generated 54–75 tokens and the saved output did not preserve `done_reason`. Both models passed one simple tool-call smoke test, selecting `get_current_weather` with `city=Boston` and `unit=fahrenheit` from a schema with required fields and an enum, in the presence of a product-search distractor tool. No tool was executed.
+- **Qwen3 8B preliminary fact:** one earlier 4K test showed 6.0 GB model allocation and 30% CPU / 70% GPU placement; warm generation was 12.59 tok/s. It was not measured with the same three-run protocol, so do not compare it as a controlled result.
+- **Limitations:** tiny sample size; one simple tool prompt per 4B model; no multi-turn round trip, no multi-tool case, no no-tool case, no missing-argument case, no error recovery, no adversarial result, no 8K/16K context, no concurrency, no sustained run, no full model digest capture. Prompt throughput was affected by prompt-cache differences and should not be compared.
+- **Interpretation:** both 4B models are viable hardware candidates at 4K context. Nemotron had slightly higher observed generation throughput and lower reported allocation, but model quality and safe tool behavior remain unproven. Qwen3 4B remains the leading primary candidate for further evaluation; Nemotron is an efficiency/secondary candidate. These are provisional descriptions only.
+- **Decision status:** no final model-profile assignment. R-005 remains open. Detailed data: `research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md`.
+- **Sources:** [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md), [Ollama API usage fields](https://github.com/ollama/ollama/blob/main/docs/api/usage.mdx), [Qwen3 catalog](https://ollama.com/library/qwen3), [Nemotron 3 Nano catalog](https://ollama.com/library/nemotron-3-nano).

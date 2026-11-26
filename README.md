@@ -1,6 +1,6 @@
 # Agent Platform — Architecture Baseline
 
-**Document set:** 0.1.0 · **Baseline date:** 2026-11-25  
+**Document set:** 0.2.0 · **Updated:** 2026-11-25  
 **Status:** Project direction approved; detailed decisions retain the status shown in the documents and ADRs.
 
 This repository is the durable project reference for designing and implementing a self-hosted, general-purpose AI agent platform. The project is educational as well as technical: implementations must be accompanied by explanations, primary-source research, experiments, tests, and reflection.
@@ -38,6 +38,10 @@ This repository is the durable project reference for designing and implementing 
 - **Superseded:** replaced by a later decision; retained for history.
 
 Do not silently convert Proposed or Open decisions into Agreed decisions.
+
+## Current progress
+
+Phase 0 environment discovery is underway. The initial Windows/WSL2 environment and Docker integration are verified; Windows-hosted Ollama is reachable from WSL via mirrored networking. Initial Qwen3 4B and Nemotron 3 Nano 4B inference and single-tool smoke tests are recorded, but no final model roles have been selected. See `docs/DEVELOPMENT_ROADMAP.md` for checkpoint status.
 
 ## Source freshness
 

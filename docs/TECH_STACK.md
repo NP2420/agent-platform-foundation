@@ -50,9 +50,11 @@ Alternatives: SQLModel (built on SQLAlchemy/Pydantic), direct psycopg for explic
 
 ## 5. Model serving and provider integration
 
-**Initial inference:** Ollama, running locally. Use its native API or a narrow adapter; do not assume every model supports tools, structured output, vision, streaming, or parallel calls equally.
+**Initial inference:** Ollama `0.40.18`, hosted on Windows and reached from Ubuntu/WSL2 at `http://127.0.0.1:11434` using WSL mirrored networking. This topology has been verified with a successful API version request from WSL. Ollama remains bound to `127.0.0.1`; do not widen the listener or add firewall openings for convenience.
 
-**Internal abstraction:** provider-neutral model request/response contracts plus provider adapters. Preserve capability metadata and provider-specific options rather than flattening all providers into a lowest-common-denominator API.
+The host's initial candidates are `qwen3:4b-q4_K_M` and `nemotron-3-nano:4b`; `qwen3:8b` is a larger reference candidate. At 4K context, both 4B candidates were reported as 100% GPU, with mean warm generation rates of 57.03 and 61.08 tok/s respectively over three exploratory runs. One single-tool smoke test per 4B model returned the correct tool and arguments. These observations do not determine final model roles. See `research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md`.
+
+**Internal abstraction:** provider-neutral model request/response contracts plus provider adapters. Preserve capability metadata and provider-specific options rather than flattening all providers into a lowest-common-denominator API. Configure the endpoint (for example, `OLLAMA_BASE_URL`) instead of hard-coding Windows/WSL networking into application code. The initial host placement can change without changing the provider-neutral runtime contract.
 
 Alternatives and future options:
 - llama.cpp: local quantized GGUF inference and fine-grained local control.
