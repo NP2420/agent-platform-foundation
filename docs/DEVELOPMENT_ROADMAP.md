@@ -41,7 +41,7 @@ For each chunk:
 
 ### Phase 1: Repository and toolchain
 
-Python version (3.14 vs 3.15 compatibility check), `uv` project and lockfile, Ruff, one type checker, pytest, package layout, configuration and secrets conventions, a `.env.example`, and GitHub Actions running lint, types, and tests on every PR. Decide whether the working copy moves to the WSL ext4 filesystem.
+Python version (3.14 vs 3.15 compatibility check), `uv` project and lockfile, Ruff, one type checker, pytest, package layout, configuration and secrets conventions, a `.env.example`, and GitHub Actions running lint, types, and tests on every PR. Working copies: owner on WSL ext4, assistant on the Windows-side folder, synced through git (decided 2026-11-26; [environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md)).
 **Exit:** a fresh clone creates the locked environment and CI passes.
 
 ### Phase 2: Domain contracts and run state machine

@@ -52,7 +52,15 @@ networkingMode=mirrored
 
 The WSL ext4 root reports about 1 TB of capacity. That is a virtual disk size, not free space on C:.
 
-Docker recommends keeping repositories on the WSL ext4 filesystem rather than `/mnt/c` for performance. The current working copy is on the Windows side, so decide in Phase 1 whether to move it.
+Docker recommends keeping repositories on the WSL ext4 filesystem rather than `/mnt/c` for performance. Measured 2026-11-26 with [`scripts/bench_fs.py`](../../scripts/bench_fs.py) (venv, warm-cache install of 7 packages, imports, 1,000 tests in 100 files, ruff, git status):
+
+| Setup | Total | 1,000 tests |
+|---|---:|---:|
+| Project and venv on `/mnt/c` | 82.8 s | 19.2 s |
+| Project on `/mnt/c`, venv on WSL ext4 | 16.1 s | 13.9 s |
+| Project and venv on WSL ext4 | 1.5 s | 0.8 s |
+
+The cost is per file opened across the Windows boundary (roughly 0.1 s each), so moving only the venv isn't enough. **Decision:** the owner's working copy lives on WSL ext4 at `~/src/agent-platform-foundation`. The assistant can only reach the Windows-side folder, so that copy remains its working copy, and the two sync through git ([ADR 0013](../adr/0013-pull-request-workflow.md)).
 
 ## Docker
 

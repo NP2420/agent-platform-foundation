@@ -59,6 +59,10 @@ Through a question-and-answer session with the owner: the purpose is practising 
 
 Mapped what would change if this ran as a production application at a large manufacturer, with Komatsu as the example: SSO, source-system connectors, multilingual search (PostgreSQL full-text can't segment Japanese), a model gateway with data residency, Kubernetes and IaC, compliance including export control. Planned as milestone 6 with free local stand-ins. Taken now: `language` and `classification` fields on documents, with policy able to keep a class away from hosted models. → [note](research/ENTERPRISE_GAP.md)
 
+### 2026-11-26: Where the working copy lives
+
+Benchmarked the dev loop on `/mnt/c` vs WSL ext4: 82.8 s vs 1.5 s in total, 19.2 s vs 0.8 s for 1,000 tests. Moving only the venv to ext4 still left tests at 13.9 s, because the cost is per file opened across the Windows boundary. Decision: the owner works in a WSL ext4 clone; the assistant keeps the Windows-side folder and syncs through git. → [environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md), [ADR 0013](adr/0013-pull-request-workflow.md)
+
 ## Entry template
 
 ```markdown
