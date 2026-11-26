@@ -14,6 +14,9 @@ One file per material decision. An ADR is never edited to reverse a decision: wr
 | [0008](0008-execution-isolation-boundary.md) | Separate execution broker for powerful capabilities | Accepted; sandbox open |
 | [0009](0009-local-first-self-hosted.md) | Local-first, self-hosted | Accepted |
 | [0010](0010-windows-hosted-ollama-initial-deployment.md) | Windows-hosted Ollama via WSL mirrored networking | Accepted for development |
+| [0011](0011-file-agent-reference-use-case.md) | File agent as the reference use case | Accepted |
+| [0012](0012-portable-deployment.md) | Portable, cloud-ready deployment shape | Accepted |
+| [0013](0013-pull-request-workflow.md) | Branches, pull requests, and CI | Accepted |
 
 ## Writing one
 

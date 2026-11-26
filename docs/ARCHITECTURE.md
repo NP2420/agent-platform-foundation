@@ -16,6 +16,8 @@ A Python modular monolith with explicit adapter boundaries. The boxes below are 
 
 ## Components
 
+**CLI.** The first client. In milestone 1 it calls the runtime directly; from milestone 2 it is an API client like any other.
+
 **API / control plane.** Request validation, run creation and queries, approval and cancellation commands, event streaming over SSE, quotas. FastAPI. No reasoning logic, no user code. See [API_SPEC.md](API_SPEC.md).
 
 **Run manager.** Creates runs, binds each to an agent configuration version, enforces lifecycle transitions, and coordinates persistence. A thread (conversation) can contain many runs.
@@ -135,9 +137,11 @@ Directories are modules in one package, not separate services or distributions.
 
 ## Deployment
 
-Initially: one Python process (API and runtime), Ollama, PostgreSQL, and in-process native tools that are trusted and low-risk. Restricted workers arrive before any powerful execution tool does.
+Portable by design ([ADR 0012](adr/0012-portable-deployment.md)): containers, configuration from the environment, no state in app processes, health and readiness endpoints, logs to stdout. The same stack runs on the laptop or any Linux host; only configuration differs.
 
-Later, if justified: separate API and worker processes, Temporal, TypeScript MCP servers, a Go or Rust execution service, a telemetry collector and dashboards.
+- **Milestone 1:** the CLI calls the runtime in-process. Ollama, or an optional hosted API, is reached at a configured endpoint.
+- **Milestone 2 onward:** one Python service (API and runtime), PostgreSQL, and an optional telemetry profile, started with Docker Compose. The CLI becomes an API client.
+- **Later, if justified:** separate API and worker processes, restricted execution workers, Temporal, TypeScript MCP servers.
 
 ## Observability
 

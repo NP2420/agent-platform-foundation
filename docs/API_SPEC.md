@@ -28,6 +28,10 @@ Transport: HTTP/JSON for commands and queries, Server-Sent Events for run events
 
 The client sends an agent version, a thread (or "new"), the input, a small set of allowed options (not arbitrary model overrides), and an idempotency key. The server resolves identity, tool scopes, and budgets from trusted configuration. Nothing in the request or the model output can raise privileges, deadlines, or budgets beyond policy.
 
+## Triggers
+
+Runs can also start from a schedule or an event (for example, a file appearing in a watched folder). A trigger calls the same create-run command, under a configured principal and the same policy checks. It never gets a side door.
+
 ## Event envelope
 
 ```json

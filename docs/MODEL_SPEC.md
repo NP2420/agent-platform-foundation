@@ -1,6 +1,6 @@
 # Models: Gateway, Profiles, and Evaluation
 
-**Status:** The provider abstraction and tiered profiles are accepted. Providers, model IDs, profile assignments, and routing policy stay open until benchmarked.
+**Status:** The provider abstraction and configurable profiles are accepted; one profile (`primary`) for now. Providers, model IDs, profile assignments, and routing policy stay open until benchmarked.
 
 ## Goals
 
@@ -21,15 +21,21 @@
 
 ## Profiles
 
-| Profile | Used for | What to measure |
-|---|---|---|
-| `primary` | Reasoning, planning, final synthesis | Task success, tool-use reliability, usable context |
-| `fast` | Classification, extraction, small transforms | Latency, schema validity |
-| `summarizer` | Compressing history and tool results | Faithfulness; keeps constraints and provenance |
-| `specialist` | A bounded task needing a modality or domain | Task-specific benchmark |
-| `evaluator` | Independent checking | Agreement with reference labels; calibration |
+A profile is a named role mapped to a provider and model in configuration. Milestone 1 defines one, `primary`, and the eval can run it against any configured deployment.
 
-These are roles, not a five-model deployment. The owner maps each profile to a deployment explicitly. Automatic routing comes later, and only on benchmark evidence.
+```yaml
+# illustrative
+profiles:
+  primary:
+    provider: ollama
+    model: nemotron-3-nano:4b
+    num_ctx: 16384
+providers:
+  ollama:    { base_url: ${OLLAMA_BASE_URL} }
+  anthropic: { api_key: ${ANTHROPIC_API_KEY}, monthly_limit_usd: 10 }
+```
+
+More profiles (for example `fast`, `summarizer`, `evaluator`) are added only when a measured need appears: a task category that one model handles too slowly, too expensively, or too poorly. Automatic routing between profiles comes later still.
 
 ## Request and response
 
@@ -44,6 +50,16 @@ The router considers: task type and modality, required capabilities, measured qu
 A fallback never moves private local data to a remote provider on its own. Remote fallback requires an explicit data policy and user configuration.
 
 The model can suggest delegation; the router and policy decide whether another model call or child run actually happens. Depth, concurrency, budget, tool scope, and deadline are all enforced. The evaluator model is not ground truth and has to be calibrated against reference labels.
+
+## Providers
+
+| Provider | Role | Notes |
+|---|---|---|
+| Ollama | Default, local | Free, private; limited to models that fit 6 GB of VRAM |
+| Anthropic API | Optional, hosted | Quality baseline for evals and hard tasks. Paid from a prepaid Console balance with a hard spend limit; a Claude chat subscription doesn't include API access. Default comparison model: the cheapest current Claude model, with larger ones opt-in. |
+| Fake | Tests | Scripted responses and errors; no network |
+
+Every call records input and output tokens, latency, and cost (computed from a configured price table for hosted models; zero for local). Runs enforce token and spend budgets ([runtime spec](RUNTIME_SPEC.md#budgets)). API keys come from the environment and never appear in logs, traces, or the repository.
 
 ## Ollama baseline
 

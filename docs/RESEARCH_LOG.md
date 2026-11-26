@@ -10,11 +10,13 @@ Dated findings that shaped decisions. Each entry is short and links to the resea
 | R-003 | PostgreSQL 18 or 19? | Compatibility plus workload benchmark | 7 |
 | R-004 | psycopg 3 or asyncpg? | Compatibility, migrations, concurrency | 7 |
 | R-005 | Which local models, for which profiles? | Versioned tool-use suite, context scaling, resource use | 0 / 3 |
-| R-006 | Which sandbox backend? | Threat model and negative tests on the host | 10 |
-| R-007 | Which MCP SDK and protocol revision? | Release notes, migration guide, contract test | 9 |
-| R-008 | Is Temporal justified? | Durability requirements, failure-injection comparison | 15 |
-| R-009 | Do tiered models beat one model? | Same cases and hardware, cost vs quality | 13 |
-| R-010 | Which observability backend? | Usefulness vs local resource cost | 12 |
+| R-006 | Which sandbox backend? | Threat model and negative tests on a Linux host | 16 |
+| R-007 | Which MCP SDK and protocol revision? | Release notes, migration guide, contract test | 15 |
+| R-008 | Is Temporal justified? | Durability requirements, failure-injection comparison | Later |
+| R-009 | Do tiered models beat one model? | Same cases and hardware, cost vs quality | Later |
+| R-010 | Which observability backend? | Usefulness vs local resource cost | 9 |
+| R-011 | Is full-text search enough, or are embeddings needed? | Milestone 1 eval: retrieval misses by cause | 6 |
+| R-012 | Which model backs the default profile? | Milestone 1 eval: local vs hosted accuracy, cost, latency | 6 |
 
 Closed: R-001 (host environment), 2026-11-25.
 
@@ -24,7 +26,7 @@ Closed: R-001 (host environment), 2026-11-25.
 
 - **PostgreSQL:** 18.7 (Nov 12) and 19.0 (Nov 19) are both current. 19 adds features with modest relevance here. Version choice deferred to Phase 7. → [note](research/POSTGRES_18_VS_19.md)
 - **Python:** 3.15.2 and 3.14.10 were both released 2026-10-25. Start from 3.14 and test 3.15. `uv` gives `pyproject.toml` plus a committed `uv.lock`. → [devguide](https://devguide.python.org/versions/), [uv](https://docs.astral.sh/uv/guides/projects/)
-- **MCP:** use the official Python and TypeScript SDKs. The v2 SDK line was described as targeting the 2026-07-28 protocol revision; confirm in Phase 9. → [spec](https://modelcontextprotocol.io/specification/)
+- **MCP:** use the official Python and TypeScript SDKs. The v2 SDK line was described as targeting the 2026-07-28 protocol revision; confirm in Phase 15. → [spec](https://modelcontextprotocol.io/specification/)
 - **Ollama:** supports chat tool calls and JSON-schema structured output; reliability depends on the model. → [API](https://github.com/ollama/ollama/blob/main/docs/api.md)
 - **Temporal:** workflow state is rebuilt by replay, so side effects go in activities, which may run more than once. Build in-process first ([ADR 0006](adr/0006-in-process-before-temporal.md)). → [durable execution](https://docs.temporal.io/durable-execution)
 - **Agent security:** OWASP's 2026 agentic Top 10 used as a checklist. Landlock, rootless Docker, and gVisor have different boundaries; a container alone is no argument. → [note](research/LOCAL_SANDBOX_OPTIONS.md)
@@ -46,6 +48,12 @@ At 4K both 4B candidates run fully on the GPU: Qwen3 4B 57.0 tok/s (3.3 GB), Nem
 ### 2026-11-26: Context scaling
 
 With `num_ctx` raised from 4K to 32K, Qwen3 4B grows from 3.3 GB to 8.0 GB and spills to CPU from 16K (77% GPU, then 51%), falling to 1.3 tok/s at 32K. Nemotron 4B grows from 2.8 GB to 3.5 GB, stays on the GPU, and holds about 47–50 tok/s. With thinking off, both recalled a planted code word at every size. With thinking on, Qwen3 used its whole 64-token budget on reasoning. One Nemotron request stalled at 16K and is treated as an outlier. Resource fit favours Nemotron; quality is still untested, so no model is selected. R-005 stays open. Caveats: one run per configuration, an easy needle, and Ollama's flash-attention and KV-cache settings weren't recorded. → [benchmarks](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md#context-scaling-2026-11-26)
+
+### 2026-11-26: Goal and scope agreed
+
+Through a question-and-answer session with the owner: the purpose is practising production-grade AI engineering; the reference use case is a file agent, read-only first ([ADR 0011](adr/0011-file-agent-reference-use-case.md)); the deployment is portable and cloud-ready ([ADR 0012](adr/0012-portable-deployment.md)); and the workflow is branches, PRs, and CI ([ADR 0013](adr/0013-pull-request-workflow.md)). The repository goes public under Apache-2.0.
+
+**Finding:** a Claude Pro subscription does not include API access; API usage needs a separately funded Console account. Monthly API credits come only with Max, Ultra, and Team plans. The hosted adapter therefore uses a small prepaid Console balance with a hard limit. → [Pro plan](https://support.claude.com/en/articles/8325606-what-is-the-pro-plan), [API credits](https://support.claude.com/en/articles/17154008-monthly-api-credits-for-max-ultra-and-team-plans)
 
 ## Entry template
 

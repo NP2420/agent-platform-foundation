@@ -1,6 +1,6 @@
 # Security and Execution Isolation
 
-**Status:** The security boundary is an accepted requirement. The host-specific sandbox is open and must be selected and tested before any arbitrary execution is enabled.
+**Status:** The security boundary is an accepted requirement. The sandbox backend is open and must be selected and tested on a plain Linux host before any code execution is enabled.
 
 ## Stance
 
@@ -75,6 +75,18 @@ OWASP's Top 10 for Agentic Applications (2026) is a useful checklist (goal hijac
 - Lock dependencies and watch advisories.
 - Use official SDKs; don't adopt unreviewed MCP servers or tool packages.
 - Keep secrets, model weights, and artifacts out of Git. Consider an SBOM for releases.
+
+## File access
+
+- **Allowlist.** A user's tools can reach only folders that user has granted. No grant, no access.
+- **Always blocked**, even inside a grant: SSH and GPG keys, cloud credential folders, browser profiles, password-manager data, `.env` files, and anything matching the configured block patterns.
+- **Canonicalise, then check.** Resolve `..`, symlinks, junctions, and case before comparing against grants. A symlink that resolves outside a grant is refused.
+- **Per-user, enforced by the application.** The agent runs as one OS user, so per-user grants are enforced by the application's authorisation layer. Every tool call carries the caller's identity and is checked against that user's grants.
+- **Bounded reads.** Size limits per file and per result; binary files are skipped unless an extractor exists.
+- **Contents are untrusted.** A document can contain instructions aimed at the model. They are data, not commands.
+- **Writes** (milestone 4) go only to a per-user output folder, or through journalled, approved operations with undo.
+
+Tests: path traversal, symlink and junction escape, case tricks on Windows paths, blocked-pattern matches inside a grant, cross-user access, and injected instructions in documents.
 
 ## Sandbox
 

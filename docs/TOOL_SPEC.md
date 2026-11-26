@@ -36,7 +36,19 @@ Each invocation carries an invocation ID, run and step IDs, caller identity, too
 
 **MCP tools.** Discovered and called through an MCP client adapter. MCP is an interoperability protocol, not our scheduler, database, authorisation system, or isolation boundary. Server metadata and outputs are untrusted. A server's own description of a tool grants it nothing.
 
+**File tools.** The first real tools, for the reference use case ([ADR 0011](adr/0011-file-agent-reference-use-case.md)). `search_files` runs full-text search over the caller's approved folders and returns passages with path, section, line range, modification time, and document version where known. `read_file` returns a bounded passage. Both resolve every path against the caller's grants after canonicalisation, refuse symlinks that leave a grant, and refuse the always-blocked list ([security spec](SECURITY_SPEC.md#file-access)). File contents are untrusted input to the model.
+
 **Execution tools** (later). Filesystem, shell, browser, and code go through the execution broker. There is never a generic `shell` tool inside the API or runtime process.
+
+## Risk tiers
+
+| Tier | Meaning | Examples | Default policy |
+|---|---|---|---|
+| `read` | No side effects | `search_files`, `read_file` | Allowed within grants |
+| `write_reversible` | Changes that can be undone from a journal | Writing a report to the output folder; rename or move with undo | Allowed in the output folder; approval elsewhere |
+| `external` | Effects outside the platform's control, or irreversible | Sending a message, deleting a file, network calls, running code | Approval required, or denied by default |
+
+The tier comes from trusted registration, never from the model or an MCP server. The list is extensible: a new tier gets added with a new kind of effect, not in advance.
 
 ## Invocation lifecycle
 

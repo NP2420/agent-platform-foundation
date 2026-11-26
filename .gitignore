@@ -49,3 +49,6 @@ model-cache/
 artifacts/
 logs/
 tmp/
+
+# Private evaluation sets built from personal files (never commit)
+evals/private/

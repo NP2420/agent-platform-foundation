@@ -35,9 +35,9 @@ Polyglot does not mean microservices. Another language becomes a separate compon
 
 Ollama 0.40.18 on Windows, reached from WSL at `127.0.0.1:11434` over mirrored networking, still bound to loopback. See [ADR 0010](adr/0010-windows-hosted-ollama-initial-deployment.md). Candidate models and measurements are in [MODEL_SPEC.md](MODEL_SPEC.md).
 
-Start with one Ollama adapter and one fake adapter. Add a second real provider when it would test whether the abstraction holds up. No gateway proxy until the complexity calls for one.
+Adapters in milestone 1: Ollama, Anthropic API (optional, prepaid Console balance with a hard limit), and a fake adapter for tests. Use the official Anthropic Python SDK. Two real providers from the start keep the abstraction honest. No gateway proxy until the complexity calls for one.
 
-**Later options:** llama.cpp, vLLM, hosted providers (optional), LiteLLM.
+**Later options:** llama.cpp, vLLM, other hosted providers, LiteLLM.
 
 ## Tools
 
@@ -58,6 +58,11 @@ Native Python tools go through our dispatcher. MCP uses the official Python SDK,
 - Lint and format: Ruff. Type checking: one of mypy or Pyright, made authoritative.
 - Telemetry: OpenTelemetry SDK and structured logs. Collectors and backends are optional.
 - Evaluation: our own harness and versioned cases in `evals/`.
+
+## CI and repository
+
+- GitHub, public, Apache-2.0. Feature branches and pull requests; `master` is protected ([ADR 0013](adr/0013-pull-request-workflow.md)).
+- GitHub Actions on Linux: Ruff, type check, and pytest on every PR; the public eval set once it can run in CI (Phase 9). Hosted-model evals run only when a key is configured and never on PRs from forks.
 
 ## Local infrastructure
 

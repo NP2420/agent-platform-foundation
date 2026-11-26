@@ -1,146 +1,166 @@
 # Development Roadmap
 
-A gated sequence, not a schedule. A phase ends when its exit gate is met, not when code exists.
+Milestones deliver one capability end to end, measured. Phases are the build steps inside them. A phase ends when its exit gate is met, not when code exists. Milestones are sized by scope, not by time estimates.
 
 ## Status
 
 This table is the single place that tracks project status.
 
-| Checkpoint | Status | Notes |
+| Item | Status | Notes |
 |---|---|---|
-| 0.1 Host and container environment | Done | [Environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md). Revisit if the host changes. |
-| 0.2 Inference topology | Done | Windows-hosted Ollama over WSL mirrored networking ([ADR 0010](adr/0010-windows-hosted-ollama-initial-deployment.md)) |
-| 0.3 Local model screening | In progress | Throughput measured at 4K. All four tool scenarios (T1–T4) pass for both 4B models. Context scaling to 32K measured: Nemotron stays fully on the GPU, Qwen3 4B only to 8K. See [benchmarks](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md). |
-| 0.4 Python and toolchain | Open | WSL has Python 3.14.4 but no pip, uv, or Linux-native Node |
-| 0.5 Phase 0 review | Open | Confirm Phase 1 scope and close Phase 0 |
-| Sandbox host feasibility | Deferred to Phase 10 | `/dev/kvm` exists but the user can't access it. No change until a backend is chosen. |
-| PostgreSQL 18 vs 19 | Deferred to Phase 7 | No code depends on the major version before then |
+| Phase 0: host and container environment | Done | [Environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md). Revisit if the host changes. |
+| Phase 0: inference topology | Done | Windows-hosted Ollama over WSL mirrored networking ([ADR 0010](adr/0010-windows-hosted-ollama-initial-deployment.md)) |
+| Phase 0: local model screening | Done for now | T1–T4 pass for both 4B models. To 32K context, Nemotron stays fully on GPU; Qwen3 4B only to 8K. See [benchmarks](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md). Quality comparison continues in the milestone 1 eval set. |
+| Phase 0: goal and scope | Done | Agreed 2026-11-26: [charter](PROJECT_CHARTER.md), ADRs [0011](adr/0011-file-agent-reference-use-case.md)–[0013](adr/0013-pull-request-workflow.md) |
+| Repository setup | In progress | Licence added. Next: noreply author email, GitHub remote, public visibility. |
+| **Milestone 1** | Not started | Next: Phase 1 toolchain |
 
 **Next steps**
 
-1. Rerun the thinking-on context test with `--num-predict 512` and record Ollama's flash-attention and KV-cache settings. Rerun the Nemotron 16K thinking-off row, which stalled once.
-2. Port the tool scenarios (T1–T4) into `evals/` and add several prompt variants per scenario. Run at 8K, with thinking on and off.
-3. Full mock-tool round trip: tool call → tool result message → final answer.
-4. Select the Python version, then start Phase 1.
+1. Rewrite the author email to the GitHub noreply address, add the GitHub remote, push, make the repo public.
+2. Phase 1: Python version, `uv` project, Ruff, type checker, pytest, GitHub Actions CI.
+3. Phase 2: run state machine and domain contracts.
+
+Carried over from model screening, to fold into the milestone 1 eval work: rerun the thinking-on context test with `--num-predict 512`; record Ollama's flash-attention and KV-cache settings; rerun the one stalled Nemotron row.
 
 ## Working cycle
 
-For each phase and each chunk inside it:
+For each chunk:
 
-1. **Discover:** the concrete problem, constraints, and unknowns.
-2. **Research:** relevant chapters, official docs, specifications, papers.
-3. **Compare:** credible alternatives for material decisions.
-4. **Design:** contracts, state transitions, failure semantics, acceptance criteria.
-5. **Implement:** one coherent concept or interface at a time.
-6. **Verify:** run the tests and record the actual output.
-7. **Reflect:** what differed from expectations, and what should change.
-8. **Record:** update the specs, ADRs, research log, and this status table.
+1. **Discover:** the problem, constraints, unknowns.
+2. **Research:** relevant chapters, official docs, specs, papers.
+3. **Design:** contracts, state transitions, failure semantics, acceptance criteria, alternatives.
+4. **Implement** on a branch: one concept or interface at a time.
+5. **Verify:** tests and evals run, with actual output recorded in the PR.
+6. **Review:** the owner reviews and merges the PR.
+7. **Record:** specs, ADRs, research log, and this table updated in the same PR.
 
-## Phases
+## Milestone 1: cited answers from the CLI
 
-### Phase 0: Environment and architecture discovery
-
-Characterise the host, inference path, and candidate models. Record the open questions.
-**Exit:** no Phase 1–6 decision depends on an unknown host fact. Questions owned by later phases (database version, sandbox) are explicitly deferred to those phases.
+**Delivers:** a CLI question → real runtime → read-only search over one approved folder → an answer citing file and section, or "not supported by the documents". Evaluated on local and hosted models.
 
 ### Phase 1: Repository and toolchain
 
-Python version, `uv` project and lockfile, Ruff, type checker, pytest, package layout, configuration and secrets conventions. Decide where the working copy lives (Windows or the WSL ext4 filesystem).
-**Exit:** a fresh clone creates the locked environment and passes the lint, type, and test commands.
+Python version (3.14 vs 3.15 compatibility check), `uv` project and lockfile, Ruff, one type checker, pytest, package layout, configuration and secrets conventions, a `.env.example`, and GitHub Actions running lint, types, and tests on every PR. Decide whether the working copy moves to the WSL ext4 filesystem.
+**Exit:** a fresh clone creates the locked environment and CI passes.
 
 ### Phase 2: Domain contracts and run state machine
 
-Typed objects for agents, versions, messages, runs, steps, tool calls, model results, events, and errors. Lifecycle transitions with tests. No model, no database.
+Typed objects for runs, steps, messages, tool calls, model results, events, errors, and the principal (user identity and scopes). Lifecycle transitions with tests. No model, no database.
 **Read:** state machines, layering, Pydantic vs dataclasses, JSON Schema.
 **Exit:** deterministic tests cover valid and invalid transitions; contracts are framework-free.
 
-### Phase 3: Model adapter
+### Phase 3: Model adapters
 
-Ollama adapter and fake adapter, health and capability checks, normalised responses, timeouts and errors, tool-call parsing.
-**Exit:** a baseline model is chosen with its limitations recorded; the adapter is tested against the fake and against real Ollama.
+Provider-neutral contract; Ollama adapter; hosted adapter (Anthropic API, behind configuration and a spend limit); fake adapter. Health and capability checks, timeouts, normalised errors, tool-call parsing, usage and cost accounting per call.
+**Exit:** contract tests pass against the fake adapter and both real providers; per-call tokens, cost, and latency are recorded.
 
 ### Phase 4: Single-agent loop
 
-Bounded loop, context assembly interface, mocked tools, stop conditions, budgets, events, cancellation.
-**Exit:** tests cover completion, multi-turn runs, malformed responses, step exhaustion, provider timeout, and cancellation.
+Bounded loop, context assembly, stop conditions, budgets (steps, tokens, spend, wall time), run events, cancellation. Several tool calls in one response run concurrently under a fixed cap (a `TaskGroup` and a semaphore, not yet a scheduler).
+**Exit:** tests cover completion, multi-turn runs, malformed responses, budget exhaustion, provider timeout, and cancellation.
 
-### Phase 5: Tool registry and dispatcher
+### Phase 5: Tools, policy, and file search
 
-Definitions, schema validation, registry, dispatcher, identity, timeouts, concurrency policy, normalisation, audit records.
-**Exit:** one read-only tool and one controlled write tool pass the contract, permission, timeout, duplicate, and malformed-input tests.
+Tool registry and dispatcher, schema validation, risk tiers, policy checks, audit records. The first real tool: read-only full-text search over an approved folder, with text extraction for Markdown, text, code, and PDF, document version and modification time, and passage-level citations. Path allowlist and the always-blocked list enforced in the tool, with tests for traversal and symlink escape.
+**Exit:** the search tool passes contract, permission, path-escape, and malformed-input tests.
 
-### Phase 6: Orchestrator
+### Phase 6: Evaluation and CLI
 
-Plan representation, DAG validation, dependency resolution, bounded concurrency, failure propagation, cancellation.
-**Read:** asyncio structured concurrency, TaskGroup, semaphores, queues, backpressure. Compare with LangGraph without adopting it.
-**Exit:** tests prove validation, dependency order, bounded parallelism, the failure policy, clean cancellation, and no unbounded task creation.
+A CLI client over the runtime. A 25–40 question set over the public corpus (assistant drafts, owner verifies), including no-answer and misleading-question cases. Report answer accuracy, citation correctness, abstention, tokens, cost, and latency, for a local and a hosted model. A small private set over a personal folder, kept in `evals/private/`.
+**Exit:** the eval runs from one command, reproducibly, and its report is in the PR.
+
+**Milestone 1 review:** is full-text search good enough, or is there measured evidence for embeddings? Which model goes in the default profile? What did the failures have in common?
+
+## Milestone 2: persisted runs, API, and observability
+
+**Delivers:** runs persisted in PostgreSQL and served through a versioned API with streamed events; tracing; evals gating CI.
 
 ### Phase 7: PostgreSQL persistence
 
-Schema, migrations, repositories, transaction boundaries, run and event persistence, idempotency records, recovery.
+Schema, migrations, repositories, transaction boundaries, run and event persistence, idempotency records, document index tables.
 **Decide:** PostgreSQL 18 vs 19 ([research note](research/POSTGRES_18_VS_19.md)); psycopg 3 vs asyncpg.
-**Exit:** the version, driver, and migration process are recorded; tests cover conflicts, restart recovery, uniqueness, and concurrent access.
+**Exit:** tests cover conflicts, restart recovery, uniqueness, and concurrent access.
 
 ### Phase 8: API and event streaming
 
-Versioned REST API, run create, get, list, and cancel, approvals, SSE stream, idempotency keys, error envelope, minimal SDK.
-**Exit:** contract tests pass; a client can run a task and reconstruct its progress from events alone.
+Versioned REST API, SSE events, idempotency keys, error envelope, scheduled and event-triggered runs through the same create-run path. The CLI becomes an API client.
+**Exit:** a client can run a task and reconstruct its progress from events alone.
 
-### Phase 9: MCP
+### Phase 9: Observability and CI eval gate
 
-Client adapter, connection lifecycle, capability discovery, metadata mapping, protocol errors, timeouts, server trust policy.
-**Exit:** a test MCP server's tool runs through the same registry, policy, and dispatcher path as a native tool.
+OpenTelemetry tracing across API, runtime, model, and tool calls; structured logs; cost and latency dashboards as an optional Compose profile. The public eval set runs in CI and fails the PR on a regression past a threshold set from the milestone 1 baseline.
+**Exit:** a bad run can be diagnosed from its trace and records alone; a deliberate quality regression fails CI.
 
-### Phase 10: Execution broker and sandbox
+## Milestone 3: multiple users
 
-Structured execution requests, workspaces, worker identity, limits, artifact handling, cleanup, audit.
-**Decide:** the sandbox backend ([research note](research/LOCAL_SANDBOX_OPTIONS.md)), including KVM feasibility on this host.
-**Exit:** the threat model and backend are reviewed, and negative tests show filesystem, network, process, and resource access is blocked. No arbitrary execution before this.
+**Delivers:** local accounts, authentication, per-user folder permissions, approvals, a web run inspector.
 
-### Phase 11: Context and memory
+### Phase 10: Identity and authorisation
 
-History selection, token budgets, compaction, summaries with provenance, an optional retrieval interface. Vector or graph storage only for a real retrieval case.
-**Exit:** tests show relevance, provenance, budget adherence, and resistance to instructions in retrieved content.
+Local accounts, password or token authentication, sessions, per-user folder grants, admin role. File permissions are enforced by the application's authorisation layer, because the agent runs as one OS user.
+**Exit:** tests show one user's runs, files, and results are invisible to another.
 
-### Phase 12: Evaluation and observability hardening
+### Phase 11: Approvals and web inspector
 
-Versioned case suite, graders, trace correlation, metrics, redaction, failure-injection harness.
-**Exit:** baseline reports can be regenerated; regressions can fail a check.
+Approval requests bound to exact actions, with expiry. A minimal local web page to ask questions, browse runs, and approve or deny.
+**Exit:** approval replay, argument mutation, and expiry tests pass.
 
-### Phase 13: Tiered routing
+## Milestone 4: write actions and MCP
 
-A model registry with profiles, routing rules, capability checks, fallbacks, budget controls.
-**Exit:** routing measurably beats one model on cost or success, and is reproducible and tested.
+**Delivers:** the agent writes summaries and reports, plans and carries out multi-step file changes with approval and undo, and uses MCP tools.
 
-### Phase 14: Subagents
+### Phase 12: Output writing
 
-Child-run contract, scoped permissions, context policy, budgets, depth limits, cancellation propagation.
-**Exit:** delegation measurably helps on chosen evaluations and cannot exceed its scopes or budgets.
+Summaries and reports written to a per-user output folder only.
+**Exit:** writes outside the output folder are impossible, and tests prove it.
 
-### Phase 15: Temporal (only if justified)
+### Phase 13: Orchestrator
 
-Reassess whether durable timers, long approvals, worker distribution, or replay are actually needed. If they are, define workflow and activity boundaries and keep our contracts Temporal-independent.
-**Exit:** a failure-injection test demonstrates durability worth the infrastructure cost.
+Plans as data, DAG validation, dependency resolution, bounded concurrency, failure policies, cancellation ([runtime spec](RUNTIME_SPEC.md#orchestration)). A bulk file reorganisation is the first real plan.
+**Read:** asyncio structured concurrency, queues, backpressure. Compare with LangGraph without adopting it.
+**Exit:** tests prove validation, dependency order, bounded parallelism, the failure policy, and clean cancellation.
 
-### Phase 16: Release hardening
+### Phase 14: File organisation
 
-Configuration and secrets, access control, backup and restore, upgrades, quotas, runbook, dependency review, load and security tests.
-**Exit:** a release review covering:
+Rename, move, and tag, run as orchestrated plans with a preview, approval, an undo journal, and idempotent operations.
+**Exit:** every change can be previewed, approved, and undone; partial failures leave a recoverable state.
 
-- **Scope:** supported users, workload, OS and hardware, threat model, residual risks, unsupported configurations.
-- **Correctness:** state-machine and contract tests; invalid plans and tools fail closed; database constraints protect invariants; concurrency races are tested.
-- **Reliability:** bounded retries; idempotency or an explicit unknown-outcome policy per side-effecting tool; restart tests; backup and restore actually exercised; migration procedure.
-- **Security:** model output is never authorisation; deny-by-default scopes; bound approvals; redaction; no unintended network exposure; sandbox negative tests; secret handling.
-- **Agent quality:** reproducible model selection; representative and adversarial cases; calibrated judges; thresholds based on measured baselines.
-- **Operations:** runs can be reconstructed from records; telemetry is correlated with bounded cardinality; resource and disk growth is monitored.
-- **Decision:** version and commit, evidence and date, open defects, and an explicit go or no-go.
+### Phase 15: MCP
 
-A failed high-severity security or data-integrity check is never offset by a good average evaluation score.
+MCP client adapter, server lifecycle, trust policy. MCP tools go through the same registry, policy, and dispatcher path.
+**Exit:** a test MCP server's tool runs under the same policy and audit as a native tool.
 
-## Review points
+## Milestone 5: sandboxed code execution
 
-End of Phase 0 (architecture) · end of Phase 3 (model baseline) · end of Phase 6 (orchestrator and concurrency) · end of Phase 7 (database) · end of Phase 9 (MCP trust) · before Phase 10 (sandbox threat model) · end of Phase 12 (reliability baseline) · before Phase 14 (evidence for delegation) · before Phase 15 (evidence for Temporal) · before any release claim.
+### Phase 16: Execution broker and sandbox
+
+Structured execution requests, per-run workspaces, worker identity, resource and network limits, artifact handling, cleanup, audit.
+**Decide:** the sandbox backend ([research note](research/LOCAL_SANDBOX_OPTIONS.md)), including KVM feasibility. It must run on a plain Linux host, not only WSL.
+**Exit:** negative tests show filesystem, network, process, and resource access outside the grant is blocked. No arbitrary execution before this.
+
+## Later, only on evidence
+
+Each needs a measured reason before it starts.
+
+- **Context compaction and memory:** when runs exceed the usable context in measured cases.
+- **Tiered model routing:** when one model per profile measurably costs too much or fails a task category.
+- **Subagents:** when delegation measurably improves success on chosen evals.
+- **Temporal:** when durable timers, long approvals, or multi-worker recovery are needed and a failure-injection test shows the gap.
+
+## Release review
+
+Before calling any milestone production-ready for a stated scope:
+
+- **Scope:** supported users, workload, hosts, threat model, residual risks.
+- **Correctness:** state-machine and contract tests; invalid plans, tools, and paths fail closed.
+- **Reliability:** bounded retries; idempotency or an explicit unknown-outcome policy per side-effecting tool; backup and restore actually exercised.
+- **Security:** model output is never authorisation; deny-by-default scopes; bound approvals; redaction; no unintended network exposure.
+- **Quality:** reproducible eval results with thresholds from measured baselines.
+- **Operations:** runs reconstructable from records; correlated telemetry; cost within budget.
+
+A failed high-severity security or data-integrity check is never offset by a good average eval score.
 
 ## Scope control
 
-Split a phase into chunks that each deliver one concept, interface, or tested behaviour. Don't bundle unrelated subsystems to go faster. If research invalidates a decision, update the ADR and this plan before continuing.
+Each PR delivers one concept, interface, or tested behaviour. If research invalidates a decision, update the ADR and this plan before continuing.

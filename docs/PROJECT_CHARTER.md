@@ -2,35 +2,43 @@
 
 ## Purpose
 
-Build a reusable, self-hosted, general-purpose agent platform: a controlled runtime where models reason, request tools, run bounded workflows, delegate work, and produce outcomes that can be inspected afterwards.
+Practise building production-grade AI the way a company would, so the hard parts and the mistakes happen here, not on the job. The vehicle is a self-hosted agent platform. The model reasons and proposes actions; trusted code validates, authorises, executes, records, and measures them.
 
-It is equally a learning project in production software, AI engineering, distributed systems, reliability, and security. The aim is not to clone a commercial product or pile up abstractions. It is a system whose design, tests, security boundaries, and trade-offs hold up to serious review for a clearly stated scope.
+Production-grade means four things. The system is **evaluated** (versioned test sets, regression gates), **secure** (least privilege, policy outside the model, injection-aware), **observable** (every run can be traced and explained afterwards), and **budgeted** (cost and latency measured on every model call).
+
+## Reference use case
+
+**An agent that works with files.** It starts read-only: answering questions over approved folders, citing the file and section, and saying so when the documents don't support an answer. It then grows step by step toward anything a user could do with their files, each step behind its own security gate:
+
+1. Read and answer with citations.
+2. Write summaries and reports into an output folder.
+3. Organise files (rename, move, tag), with approval and undo.
+4. Run code on files, in a sandbox.
+
+The use case was chosen because it is useful, safe to start, and exercises retrieval, provenance, abstention, and permissions. Running it locally also has a real benefit: private files never leave the machine. See [ADR 0011](adr/0011-file-agent-reference-use-case.md).
+
+Two corpora: public documents (this repository's docs and the PostgreSQL manual) for committed evaluation sets, and the owner's personal folders for private evaluation that is never committed.
 
 ## Goals
 
-1. A custom, provider-independent agent loop.
-2. A common contract for model calls and model profiles.
-3. Local inference through Ollama.
-4. Tiered model profiles (primary, fast, summarizer, specialist, evaluator) without needing several models in the first slice.
-5. One tool registry and dispatcher for native and MCP tools, behind one policy check.
-6. A small in-process orchestrator: sequential and parallel execution, dependencies, bounded resources, explicit failure handling.
-7. Runs, messages, steps, and audit events persisted in PostgreSQL.
-8. A versioned API and event stream first; human interfaces later.
-9. A separate execution broker and sandbox before any powerful filesystem, shell, browser, or code tool.
-10. Deterministic tests, agent evaluations, observability, and operational docs developed alongside the runtime.
-11. Temporal evaluated only when long-running, recoverable workflows need it.
-12. Low running cost: the existing machine and open-source infrastructure.
-13. Learn each concept through primary sources, experiments, and small, reviewable changes.
+1. A custom, provider-independent agent loop with an explicit run state machine.
+2. Models as configuration: Ollama by default, hosted providers as optional adapters, chosen per profile.
+3. One tool registry, policy check, and dispatcher for native and MCP tools.
+4. Deny-by-default file access through explicitly approved folders.
+5. Identity on every run from day one; local multi-user accounts soon after the API.
+6. Versioned evaluation sets with citation and abstention metrics, run in CI.
+7. Tracing, structured logs, and per-run cost and latency accounting.
+8. Portable, container-based deployment that runs on the laptop or any Linux host.
+9. A separate execution broker and sandbox before any code execution.
+10. A company-style workflow: branches, pull requests, CI, and review.
 
-## Non-goals for the first release
+## Non-goals
 
 - Hosted multi-tenant SaaS.
-- A full web dashboard, IDE extension, or polished terminal UI.
 - A microservice per module.
-- A custom inference engine or model training.
-- Building our own database, message broker, workflow engine, container runtime, or telemetry protocol.
-- Redis, Kafka, Kubernetes, a vector database, or a graph database without a demonstrated need.
-- Multi-agent behaviour as a prerequisite for usefulness.
+- Custom inference engines or model training.
+- Building our own database, broker, workflow engine, container runtime, or telemetry protocol.
+- Redis, Kafka, Kubernetes, vector or graph databases without a measured need.
 - Model output authorising its own actions.
 - Treating containers alone as safe for arbitrary code.
 
@@ -38,71 +46,48 @@ It is equally a learning project in production software, AI engineering, distrib
 
 | Area | Direction | Status |
 |---|---|---|
-| Product | General-purpose agent platform | Accepted |
-| Deployment | Local, self-hosted, minimal running cost | Accepted |
-| Interface | API and SDK first | Accepted |
+| Purpose | Practise production-grade AI engineering | Accepted |
+| Use case | File agent, read-only first ([ADR 0011](adr/0011-file-agent-reference-use-case.md)) | Accepted |
+| Deployment | Self-hosted, portable, cloud-ready shape ([ADR 0012](adr/0012-portable-deployment.md)) | Accepted |
+| Models | Ollama default; hosted API optional, with a hard spend limit | Accepted |
+| Users | Identity on every run now; local accounts in milestone 3 | Accepted |
+| File access | Allowlist; sensitive paths always blocked | Accepted |
+| Interface | CLI, then API; web UI after multi-user | Accepted |
 | Runtime language | Python | Accepted |
-| Other languages | TypeScript for Node-native and client work; Go/Rust when justified | Accepted |
-| Inference | Ollama first | Accepted |
-| Models | Tiered profiles; one model may back all of them initially | Accepted |
-| Tools | Native and MCP | Accepted |
-| Orchestration | Custom in-process engine first | Accepted |
-| Durable workflows | Evaluate Temporal later | Accepted |
-| Database | PostgreSQL | Accepted; major version open |
-| Execution | Full capabilities long-term, behind a security boundary | Accepted; sandbox open |
+| Database | PostgreSQL; major version open | Accepted |
+| Workflow | Branches, PRs, CI; assistant writes, owner reviews and merges ([ADR 0013](adr/0013-pull-request-workflow.md)) | Accepted |
+| Licence | Apache-2.0 | Accepted |
 
-## Use cases
+## Definition of success: milestone 1
 
-1. **Single answer.** A client submits a task; the model answers.
-2. **Tool-assisted task.** The model requests a tool; the runtime validates and authorises it; the dispatcher runs it; the model continues with the result.
-3. **Multi-step workflow.** The agent proposes several tasks; the orchestrator validates dependencies and limits and runs ready work.
-4. **Approval-gated action.** Policy requires a human decision; the run pauses until approval or denial.
-5. **Long-running task.** Stays observable and cancellable; durable execution only once there is a need.
-6. **Local execution.** Filesystem, shell, browser, or code operations through the broker under a chosen isolation profile.
-7. **Evaluation.** A harness runs fixed or model-backed cases and records outcomes and metrics.
+One narrow path, end to end, measured:
 
-No primary use case is chosen yet. The owner is prioritising breadth of learning and will pick a focus later. Until then, evaluation cases cover general tool-use behaviour rather than one domain.
+- a question is asked from a CLI;
+- it runs through the real runtime: run state machine, model adapter, tool registry, policy check;
+- a read-only search tool scoped to one approved folder finds the relevant passages;
+- the answer cites file and section, or says the documents don't support an answer;
+- a 25–40 question evaluation set (drafted by the assistant, verified by the owner) reports answer accuracy, citation correctness, and abstention;
+- the same set is run on a local model and a hosted model, with cost and latency for each;
+- all of it is deterministic-testable with fake adapters.
+
+Later milestones are in the [roadmap](DEVELOPMENT_ROADMAP.md).
 
 ## Quality attributes
 
 | Attribute | How it is verified |
 |---|---|
 | Correctness | State-machine invariants, schema rejection, tool-call handling tests |
+| Answer quality | Accuracy, citation correctness, abstention on versioned eval sets |
+| Security | Path-scope tests, injection tests, permission tests, sandbox negative tests |
+| Observability | A run can be reconstructed from its records and trace |
+| Cost and latency | Tokens, spend, and time per run, against stated budgets |
 | Reliability | Retry, idempotency, cancellation, and recovery tests |
-| Security | Threat-model coverage, privilege boundaries, sandbox negative tests, audit completeness |
-| Performance | Model, tool, and end-to-end latency; queue wait; CPU, RAM, and VRAM |
-| Operability | A run can be reconstructed from stored records; backup and restore have been exercised |
-| Cost | Hardware use; any remote API spend |
-| Maintainability | Typed interfaces, migrations, ADRs, tests on critical paths |
+| Portability | The stack starts from a clean Linux host with only configuration changes |
 
-There are no numeric targets yet. They get set after measuring real hardware and workload, not before.
-
-## Definition of success
-
-The first milestone is one end-to-end path in which:
-
-- a run is created through the API;
-- a model receives a bounded context and requests a registered tool;
-- the request is validated and authorised outside the model;
-- the tool runs through the dispatcher and returns a structured result;
-- the model continues or finishes;
-- the run and its events are persisted;
-- the whole path is testable deterministically, and failures, limits, and cancellation behave as documented.
-
-Powerful execution, delegation, and durable workflows each need their own security and reliability gates before anyone calls them production-ready.
+Numeric targets are set after the first measured baseline.
 
 ## Constraints
 
-- Development runs on the owner's laptop. See [the environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md).
-- Local inference is the baseline. Remote providers are optional adapters and never required.
-- Single user for now. Multi-user or tenant isolation is out of scope until there is a real need.
-- "Production-grade" always means for a stated threat model, workload, and deployment. It is never a blanket claim.
-
-## Open assumptions
-
-- Expected concurrent runs and run durations.
-- Offline operation versus network-dependent tools.
-- Browser automation: isolated profile (the default) versus a real user session.
-- Retention and cleanup of workspaces, artifacts, and run history.
-- Default network egress for code and shell tools (the expected answer is deny).
-- Whether the API is ever exposed beyond localhost.
+- Development hardware is a laptop with a 6 GB GPU ([environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md)). Local models are small; hosted models fill the quality gap where allowed.
+- Hosted API use is paid separately from any Claude chat subscription, through a prepaid Console balance with a hard limit.
+- The repository is public. Personal files, personal evaluation cases, secrets, and model weights never enter it.
