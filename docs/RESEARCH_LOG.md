@@ -39,7 +39,7 @@ Windows Ollama on loopback was unreachable from WSL in NAT mode and reachable af
 
 ### 2026-11-25: First model screen
 
-At 4K both 4B candidates run fully on the GPU: Qwen3 4B 57.0 tok/s (3.3 GB), Nemotron 4B 61.1 tok/s (2.8 GB). Qwen3 8B partly offloads to CPU (12.6 tok/s). Tool scenarios T1 (selection), T3 (two parallel calls), and T4 (asks for missing city) pass for both 4B models. T2 is invalid because of a PowerShell `$100` interpolation bug. Nemotron's tool prompt is about twice as many tokens. No model selected. → [benchmarks](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md)
+At 4K both 4B candidates run fully on the GPU: Qwen3 4B 57.0 tok/s (3.3 GB), Nemotron 4B 61.1 tok/s (2.8 GB). Qwen3 8B partly offloads to CPU (12.6 tok/s). All four tool scenarios pass for both 4B models: T1 (selection), T2 (product search, rerun 2026-11-26 after a PowerShell `$100` interpolation bug), T3 (two parallel calls), T4 (asks for the missing city). Nemotron's tool prompt is about twice as many tokens. No model selected. → [benchmarks](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md)
 
 **Lesson:** run experiments from a versioned harness, not interactive shells.
 

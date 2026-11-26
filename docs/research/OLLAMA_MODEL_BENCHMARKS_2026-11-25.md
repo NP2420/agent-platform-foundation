@@ -60,17 +60,19 @@ Two tools: `get_current_weather(city, unit: celsius|fahrenheit)` and `search_pro
 | Scenario | Qwen3 4B | Nemotron 4B |
 |---|---|---|
 | T1 Weather: "current temperature in Boston, in Fahrenheit" | Pass | Pass |
-| T2 Product search: "wireless mechanical keyboards under $100" | Invalid; rerun | Invalid; rerun |
+| T2 Product search: "wireless mechanical keyboards under $100" | Pass (rerun) | Pass (rerun) |
 | T3 Two independent tools in one request | Pass | Pass |
 | T4 Weather request with no city | Pass | Pass |
 
 - **T1:** both picked `get_current_weather` with `city=Boston`, `unit=fahrenheit`. Qwen3: 5.43 s wall, 4.35 s of it model load, 0.549 s generation, 28 output tokens. Nemotron: 5.12 s wall, 3.84 s load, 0.624 s generation, 38 output tokens. Nemotron also returned a newline as message content alongside the call, which is harmless.
-- **T2:** invalid because of a harness bug. In PowerShell, `"...under $100."` interpolates `$100` as an empty variable, so the models received "under ." Nemotron asked what price was meant (reasonable). Qwen3 searched without a price. Neither counts. Rerun with the prompt in single quotes.
+- **T2:** the first attempt was invalid because of a harness bug. PowerShell interpolated `$100` in a double-quoted prompt as an empty variable, so the models received "under ." Rerun on 2026-11-26 with single quotes, so `$100` was preserved. Both selected `search_products` with the price in the query, and both stopped with `done_reason=stop`.
+  - Qwen3: `"wireless mechanical keyboards under $100"`; 226 prompt tokens, 28 output tokens, 6.24 s wall (5.03 s load, 0.56 s generation).
+  - Nemotron: `"wireless mechanical keyboard under $100"`; 472 prompt tokens, 34 output tokens, 6.61 s wall (5.14 s load, 0.74 s generation).
 - **T3:** both returned two tool calls in one response, with correct arguments. This shows the models can *propose* parallel calls; our validation and scheduling of them is untested.
 - **T4:** both asked for the city instead of inventing one.
 - **Prompt size:** the same tool definitions came to about 220–230 prompt tokens with Qwen3 and 467–477 with Nemotron. That probably reflects each model's chat template and tokenizer rather than real input size. It still matters, because it comes out of the context budget.
 
-T2–T4 are summarised from the session log; the raw output isn't in the repository yet. One prompt per scenario per model. This shows each behaviour can happen, not how reliably it happens.
+T1, T3, and T4 are summarised from the session log, and the T2 rerun from console output; none of the raw output is in the repository yet. One prompt per scenario per model. This shows each behaviour can happen, not how reliably it happens.
 
 ## Superseded measurements
 
@@ -86,7 +88,7 @@ An earlier script reported first-request load times of 32.96 s for Qwen3 and 14.
 
 ## Next
 
-The order is set by the roadmap status table: T2 rerun, then context scaling (8K/16K/32K), then thinking on, then the full round trip, error and injection cases, and multiple prompt variants per scenario. All of it through a versioned harness that saves raw JSON, full digests, `done_reason`, and all timing fields.
+The order is set by the roadmap status table: context scaling (8K/16K/32K), then thinking on, then the full round trip, error and injection cases, and multiple prompt variants per scenario. All of it through a versioned harness that saves raw JSON, full digests, `done_reason`, and all timing fields.
 
 ## Sources
 
