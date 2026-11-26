@@ -20,6 +20,12 @@ Rules for any AI assistant working in this repository. They are in addition to t
 - Check `git status` and `git diff --stat` before staging. Unexpected deletions are a stop signal.
 - Keep unrelated changes in separate commits (for example, a restore and a rewrite).
 
+## Decisions belong to the owner
+
+- Every decision, large or small, is the owner's: architecture, libraries, tool settings, rule sets, naming, file layout, workflow. The assistant presents the options, explains the trade-offs with sources where relevant, gives a recommendation, and waits for the owner's choice before building on it.
+- Don't present a choice as already made. If something was decided without the owner, say so and offer to revisit it.
+- Defaults are allowed only for categories the owner has explicitly delegated.
+
 ## Research and truthfulness
 
 - Check current or version-sensitive claims against primary sources: specifications, release notes, official docs, source code, papers. Textbooks are for durable concepts; blogs are secondary.

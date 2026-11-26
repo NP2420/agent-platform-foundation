@@ -13,12 +13,12 @@ This table is the single place that tracks project status.
 | Phase 0: local model screening | Done for now | T1–T4 pass for both 4B models. To 32K context, Nemotron stays fully on GPU; Qwen3 4B only to 8K. See [benchmarks](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md). Quality comparison continues in the milestone 1 eval set. |
 | Phase 0: goal and scope | Done | Agreed 2026-11-26: [charter](PROJECT_CHARTER.md), ADRs [0011](adr/0011-file-agent-reference-use-case.md)–[0013](adr/0013-pull-request-workflow.md) |
 | Repository setup | Done | Public on GitHub, Apache-2.0, noreply authorship, `master` protected by a ruleset, secret scanning with push protection |
-| **Milestone 1** | In progress | Phase 1 (toolchain and CI) in review on `phase-1/toolchain` |
+| **Milestone 1** | In progress | Phase 1 done. Phase 2 decisions so far: Pydantic domain types, Pyright, a `CANCELLING` state, timeout as a reason on `FAILED`, Hypothesis. |
 
 **Next steps**
 
-1. Merge Phase 1, then add the CI job `lint, types, tests` as a required status check in the `master` ruleset.
-2. Phase 2: run state machine and domain contracts.
+1. Make the CI job `lint, types, tests` a required status check in the `master` ruleset.
+2. Review the remaining Phase 2 design questions with the owner, then build the run state machine and domain contracts.
 
 Carried over from model screening, to fold into the milestone 1 eval work: rerun the thinking-on context test with `--num-predict 512`; record Ollama's flash-attention and KV-cache settings; rerun the one stalled Nemotron row.
 

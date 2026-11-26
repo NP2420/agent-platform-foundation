@@ -56,8 +56,10 @@ The provider adapter returns content blocks, zero or more tool-call proposals, a
 | `WAITING_EXTERNAL` | Blocked on a defined external signal. Add only when needed. |
 | `COMPLETED` | Terminal success |
 | `FAILED` | Unrecoverable error, or recovery exhausted |
-| `CANCELLED` | Cancellation completed |
-| `TIMED_OUT` | Deadline exceeded. Decide in Phase 2 whether this is a state or a terminal reason on `FAILED`. |
+| `CANCELLING` | Cancellation requested; no new work starts, and in-flight model or tool calls are settling |
+| `CANCELLED` | Cancellation completed. Each in-flight operation is recorded as completed, cancelled, or unknown. |
+
+A deadline or budget overrun is a **reason on `FAILED`**, not its own state: `FAILED` carries a terminal reason such as `deadline_exceeded`, `budget_exhausted`, or `error` (decided 2026-11-26). New failure kinds add a reason, not a state.
 
 Terminal states never change, apart from an explicit administrative correction record. Transitions are validated in application code and covered by tests.
 
