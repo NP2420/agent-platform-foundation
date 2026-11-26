@@ -1,6 +1,6 @@
 # ADR 0003: Python for the Agent Runtime
 
-- **Status:** Accepted; interpreter version open
+- **Status:** Accepted; interpreter version set by [ADR 0014](0014-python-toolchain.md)
 - **Date:** 2026-11-25
 
 ## Context

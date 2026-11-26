@@ -29,7 +29,7 @@
 | `approvals` | A request and decision tied to one exact action |
 | `artifacts` | Metadata for files produced by runs (bytes stored elsewhere) |
 | `users`, `folder_grants` | Accounts and per-user approved folders (milestone 3; a single local principal before that) |
-| `documents` | Indexed file: owner, path, size, modification time, content hash, version where known |
+| `documents` | Indexed file: owner, path, size, modification time, content hash, version where known, `language` (detected, BCP 47), `classification` (`public`, `internal`, `restricted`) |
 | `passages` | Searchable chunk of a document with section and line range, and a full-text index |
 
 Every record that belongs to someone carries the owning principal from the start, so adding accounts in milestone 3 needs no migration of meaning. No organisation or tenant tables beyond that.

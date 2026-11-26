@@ -52,3 +52,5 @@ tmp/
 
 # Private evaluation sets built from personal files (never commit)
 evals/private/
+bench_fs_results.jsonl
+bench_fs_scratch/

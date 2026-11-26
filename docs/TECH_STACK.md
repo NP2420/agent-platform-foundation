@@ -15,7 +15,7 @@ Polyglot does not mean microservices. Another language becomes a separate compon
 
 ## Python and packaging
 
-- **Interpreter:** 3.14.x is the starting candidate; test 3.15.x before choosing. Both 3.15.2 and 3.14.10 were current as of 2026-10-25. Pick the newest version that every dependency (FastAPI, Pydantic, the DB driver, the MCP SDK, OpenTelemetry, test and type tooling) supports. If something lags on 3.15, use 3.14 and note why.
+- **Interpreter:** Python 3.15. Every planned dependency installed from prebuilt wheels on 3.15.2 ([ADR 0014](adr/0014-python-toolchain.md)). If one ever lags, fall back to 3.14 in a superseding ADR.
 - **Environment:** `uv`. Metadata in `pyproject.toml`; `uv.lock` committed and never hand-edited. Dependency groups for dev, telemetry, and so on.
 - **Alternatives:** Poetry, PDM, Hatch, pip-tools. `uv` is a convenience, not an architectural dependency.
 
@@ -55,7 +55,7 @@ Native Python tools go through our dispatcher. MCP uses the official Python SDK,
 
 - Contracts: Pydantic inside Python, JSON Schema across process and tool boundaries.
 - Tests: pytest; Hypothesis for property tests; contract tests for providers and MCP.
-- Lint and format: Ruff. Type checking: one of mypy or Pyright, made authoritative.
+- Lint and format: Ruff. Type checking: mypy in strict mode, the one authoritative checker ([ADR 0014](adr/0014-python-toolchain.md)).
 - Telemetry: OpenTelemetry SDK and structured logs. Collectors and backends are optional.
 - Evaluation: our own harness and versioned cases in `evals/`.
 

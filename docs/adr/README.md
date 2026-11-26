@@ -6,7 +6,7 @@ One file per material decision. An ADR is never edited to reverse a decision: wr
 |---|---|---|
 | [0001](0001-api-first.md) | API and SDK are the product boundary | Accepted |
 | [0002](0002-polyglot-boundaries.md) | Languages chosen per subsystem, not microservices by default | Accepted |
-| [0003](0003-python-agent-runtime.md) | Python for the agent runtime | Accepted; interpreter version open |
+| [0003](0003-python-agent-runtime.md) | Python for the agent runtime | Accepted; version set by 0014 |
 | [0004](0004-model-provider-abstraction.md) | Provider-neutral model gateway, Ollama first | Accepted |
 | [0005](0005-native-tools-and-mcp.md) | One tool contract for native and MCP tools | Accepted |
 | [0006](0006-in-process-before-temporal.md) | In-process orchestrator before Temporal | Accepted |
@@ -17,6 +17,7 @@ One file per material decision. An ADR is never edited to reverse a decision: wr
 | [0011](0011-file-agent-reference-use-case.md) | File agent as the reference use case | Accepted |
 | [0012](0012-portable-deployment.md) | Portable, cloud-ready deployment shape | Accepted |
 | [0013](0013-pull-request-workflow.md) | Branches, pull requests, and CI | Accepted |
+| [0014](0014-python-toolchain.md) | Python 3.15, uv, Ruff, mypy, pytest, CI | Accepted |
 
 ## Writing one
 

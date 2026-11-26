@@ -33,7 +33,21 @@ Start with the charter, architecture, and roadmap. Read the specifications when 
 
 Observability lives in the architecture doc. The release checklist is the last section of the roadmap.
 
-**Decisions and research:** [ADRs](docs/adr/README.md) · [research log](docs/RESEARCH_LOG.md) · [environment baseline](docs/research/ENVIRONMENT_BASELINE_2026-11-25.md) · [Ollama benchmarks](docs/research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md) · [sandbox options](docs/research/LOCAL_SANDBOX_OPTIONS.md) · [PostgreSQL 18 vs 19](docs/research/POSTGRES_18_VS_19.md)
+**Decisions and research:** [ADRs](docs/adr/README.md) · [research log](docs/RESEARCH_LOG.md) · [environment baseline](docs/research/ENVIRONMENT_BASELINE_2026-11-25.md) · [Ollama benchmarks](docs/research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md) · [sandbox options](docs/research/LOCAL_SANDBOX_OPTIONS.md) · [PostgreSQL 18 vs 19](docs/research/POSTGRES_18_VS_19.md) · [enterprise gap](docs/research/ENTERPRISE_GAP.md)
+
+## Development
+
+Requires [uv](https://docs.astral.sh/uv/) 0.13.x. From WSL, in a clone on the Linux filesystem (not `/mnt/c`; see the [environment baseline](docs/research/ENVIRONMENT_BASELINE_2026-11-25.md)):
+
+```bash
+uv sync                      # Python 3.15 and dev tools, exactly as locked
+uv run ruff format --check . # formatting
+uv run ruff check .          # lint
+uv run mypy                  # types (strict)
+uv run pytest                # tests
+```
+
+CI runs the same commands on every pull request. Copy `.env.example` to `.env` for local configuration; `.env` is git-ignored.
 
 ## Decision status labels
 
