@@ -55,6 +55,10 @@ Through a question-and-answer session with the owner: the purpose is practising 
 
 **Finding:** a Claude Pro subscription does not include API access; API usage needs a separately funded Console account. Monthly API credits come only with Max, Ultra, and Team plans. The hosted adapter therefore uses a small prepaid Console balance with a hard limit. → [Pro plan](https://support.claude.com/en/articles/8325606-what-is-the-pro-plan), [API credits](https://support.claude.com/en/articles/17154008-monthly-api-credits-for-max-ultra-and-team-plans)
 
+### 2026-11-26: Enterprise gap
+
+Mapped what would change if this ran as a production application at a large manufacturer, with Komatsu as the example: SSO, source-system connectors, multilingual search (PostgreSQL full-text can't segment Japanese), a model gateway with data residency, Kubernetes and IaC, compliance including export control. Planned as milestone 6 with free local stand-ins. Taken now: `language` and `classification` fields on documents, with policy able to keep a class away from hosted models. → [note](research/ENTERPRISE_GAP.md)
+
 ## Entry template
 
 ```markdown

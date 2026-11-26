@@ -84,6 +84,7 @@ OWASP's Top 10 for Agentic Applications (2026) is a useful checklist (goal hijac
 - **Per-user, enforced by the application.** The agent runs as one OS user, so per-user grants are enforced by the application's authorisation layer. Every tool call carries the caller's identity and is checked against that user's grants.
 - **Bounded reads.** Size limits per file and per result; binary files are skipped unless an extractor exists.
 - **Contents are untrusted.** A document can contain instructions aimed at the model. They are data, not commands.
+- **Classification.** Every document has a classification (default `internal`, set per folder grant). Policy can keep a class away from a model provider; for example, `restricted` passages are never sent to a hosted model.
 - **Writes** (milestone 4) go only to a per-user output folder, or through journalled, approved operations with undo.
 
 Tests: path traversal, symlink and junction escape, case tricks on Windows paths, blocked-pattern matches inside a grant, cross-user access, and injected instructions in documents.

@@ -139,6 +139,10 @@ Structured execution requests, per-run workspaces, worker identity, resource and
 **Decide:** the sandbox backend ([research note](research/LOCAL_SANDBOX_OPTIONS.md)), including KVM feasibility. It must run on a plain Linux host, not only WSL.
 **Exit:** negative tests show filesystem, network, process, and resource access outside the grant is blocked. No arbitrary execution before this.
 
+## Milestone 6: enterprise profile
+
+**Delivers:** the same system in the shape a large company would run it, using free local stand-ins: SSO (Keycloak), multilingual search with Japanese support, vLLM behind a model gateway, Kubernetes and Terraform with two environments, LLM tracing, classification and export-control policy, and Japanese eval cases. Scope and the stand-ins are in the [enterprise gap note](research/ENTERPRISE_GAP.md). Phases are planned when milestone 5 is done.
+
 ## Later, only on evidence
 
 Each needs a measured reason before it starts.
