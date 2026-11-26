@@ -1,23 +1,22 @@
-# ADR 0006: Build an In-Process Orchestrator Before Considering Temporal
+# ADR 0006: In-Process Orchestrator Before Temporal
 
-- **Status:** Accepted direction
+- **Status:** Accepted
 - **Date:** 2026-11-25
 
 ## Context
 
-The project is educational and must first understand the agent loop, plan validation, dependencies, concurrency, failures, and state transitions. A durable workflow engine can add recovery and long-running execution but introduces operational infrastructure and deterministic-workflow constraints.
+The project first needs to understand the agent loop, plan validation, dependencies, concurrency, failures, and state transitions. A durable workflow engine adds recovery and long-running execution, but also infrastructure and deterministic-workflow constraints.
 
 ## Decision
 
-Build a modest in-process scheduler and explicit orchestration contracts first. Keep application use cases independent of the scheduler implementation. Evaluate Temporal after concrete requirements emerge for durable timers, long-running approvals, worker distribution, and recovery/replay.
+Build a modest in-process scheduler with explicit orchestration contracts. Keep use cases independent of the scheduler implementation. Evaluate Temporal once concrete needs appear for durable timers, long-running approvals, worker distribution, or replay.
 
 ## Consequences
 
-- Initial in-process execution does not automatically survive process crashes; do not claim durable recovery before implementing and testing it.
-- Persist intent/outcome and design idempotency from the beginning where useful.
-- If Temporal is introduced, workflow code must be deterministic and side effects belong in activities.
-- Activities may retry; external writes still need idempotency/reconciliation.
+- In-process execution does not survive a crash. Don't claim durability before it is implemented and tested.
+- Persist intent and outcome, and design for idempotency, from the start.
+- If Temporal arrives, workflow code must be deterministic, with side effects in activities. Activities retry, so external writes still need idempotency.
 
 ## Revisit when
 
-Required workflow duration, recovery, signaling, or worker topology exceeds what a modest in-process design can reliably support.
+Workflow duration, recovery, signalling, or worker topology outgrows what the in-process design can reliably support.

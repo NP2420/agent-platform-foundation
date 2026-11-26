@@ -1,184 +1,158 @@
-# System Architecture
+# Architecture
 
-**Architecture style:** Python modular monolith initially, with explicit adapter boundaries and optional separate worker processes. This is a logical architecture, not a requirement to deploy every box as an independent service.
+A Python modular monolith with explicit adapter boundaries. The boxes below are logical components, not services. Everything runs in one process until a concrete need (isolation, scaling, independent deployment) justifies splitting something out.
 
-## 1. Design principles
+## Principles
 
-1. The model proposes; deterministic application code validates, authorizes, schedules, and executes.
-2. The runtime owns the agent loop; clients only submit commands and render state/events.
-3. The orchestration engine is framework-independent and starts in-process.
-4. Model providers and tool transports are adapters behind internal contracts.
-5. The model server, MCP servers, web pages, documents, and tool results are untrusted inputs.
-6. The API/control plane must not execute model-generated code or arbitrary shell commands in its own privilege context.
-7. Persisted application state and telemetry traces are related but distinct records.
-8. Every external side effect needs explicit retry/idempotency semantics.
-9. Introduce services and infrastructure only when evidence justifies them.
+1. The model proposes; deterministic code validates, authorises, schedules, and executes.
+2. The runtime owns the agent loop. Clients submit commands and render events; they hold no agent or authorisation logic.
+3. The orchestrator is our own code, framework-independent, and in-process to start.
+4. Model providers and tool transports sit behind internal interfaces (ports and adapters).
+5. Model output, MCP servers, web content, documents, and tool results are untrusted input.
+6. Model-generated code and shell commands never run in the API process.
+7. Application state (PostgreSQL) and telemetry (traces, logs, metrics) are separate records with different retention rules.
+8. Every external side effect has defined retry and idempotency behaviour.
+9. New services and infrastructure need evidence, not anticipation.
 
-## 2. Logical components
+## Components
 
-### API and control plane
+**API / control plane.** Request validation, run creation and queries, approval and cancellation commands, event streaming over SSE, quotas. FastAPI. No reasoning logic, no user code. See [API_SPEC.md](API_SPEC.md).
 
-Responsibilities: authentication boundary, request validation, run creation/queries, approval/cancellation commands, streaming event delivery, and application-level quotas. It should not own model reasoning logic or run arbitrary user code.
+**Run manager.** Creates runs, binds each to an agent configuration version, enforces lifecycle transitions, and coordinates persistence. A thread (conversation) can contain many runs.
 
-Initial implementation: FastAPI application in the Python package. The first interface is a versioned HTTP API plus server-sent events (SSE). An SDK can wrap it. No polished UI is required initially.
+**Agent runtime.** The bounded model ↔ tool loop. See [RUNTIME_SPEC.md](RUNTIME_SPEC.md).
 
-### Run manager
+**Context manager.** Builds each model request from stored history under a token budget: selects, summarises, retrieves, or drops messages. It is not the store of record. Compaction keeps provenance and never silently drops hard constraints.
 
-Creates and transitions runs, binds them to agent configuration versions, enforces lifecycle invariants, and coordinates persistence. A thread/conversation is not the same thing as a run: a thread can contain multiple runs.
+**Model gateway.** Maps a logical profile to a provider adapter. Owns capability checks, timeouts, safe retries, usage accounting, and fallback. See [MODEL_SPEC.md](MODEL_SPEC.md).
 
-### Agent runtime
+**Orchestrator.** Validates plans (as data), schedules ready nodes under concurrency and budget limits, and handles failure and cancellation. Executes registered operations only. See [RUNTIME_SPEC.md](RUNTIME_SPEC.md#orchestration).
 
-Implements the bounded interaction loop:
+**Tool registry and dispatcher.** The registry holds trusted definitions; the dispatcher validates arguments, checks policy, executes with timeouts, normalises output, and records the invocation. Native and MCP tools share this path. See [TOOL_SPEC.md](TOOL_SPEC.md).
 
-1. Load run and versioned agent configuration.
-2. Construct model context from system/developer instructions, conversation history, relevant tool definitions, and selected retrieved state.
-3. Select model profile/provider using a policy.
-4. Invoke the model adapter.
-5. Parse and normalize the response.
-6. For each requested action, validate schema and policy before dispatch.
-7. Collect and persist results/events.
-8. Continue, pause, delegate, or complete based on normalized outcome and run budget.
-9. Stop on final response, denial, cancellation, or budget exhaustion.
+**Policy engine.** Decides allow, deny, or require-approval from identity, granted scopes, tool risk, and resource limits. A model's claim that something is safe counts for nothing.
 
-### Context manager
+**Execution broker.** A separate process boundary for filesystem, shell, browser, and code. Accepts structured, policy-checked requests and runs them in restricted workers. The sandbox backend is open. See [SECURITY_SPEC.md](SECURITY_SPEC.md).
 
-Builds the request context; it is not the canonical store of the conversation. Persist history separately, then select, summarize, retrieve, or omit messages for each model invocation under an explicit token/context budget. Context compaction must preserve provenance and not silently discard critical constraints.
+**Persistence.** PostgreSQL holds agent versions, threads, messages, runs, steps, tool invocations, approvals, and an append-only run event history. That history supports audit and replay to clients; it does not make the system event-sourced. See [DATA_MODEL.md](DATA_MODEL.md).
 
-### Model gateway/router
-
-Maps a logical role/task to a model profile and provider adapter. It owns capability checks, timeouts, retries where safe, usage normalization, and optional fallback. It does not assume all providers support identical features.
-
-### Orchestration engine
-
-Validates proposed task plans and schedules ready nodes. It manages dependency edges, concurrency, deadlines, cancellation, failure policy, and child-run boundaries. It should accept plans as data and execute only registered operations, never arbitrary model-generated code.
-
-### Tool registry and dispatcher
-
-The registry contains definitions and metadata; the dispatcher performs runtime validation, policy checks, argument binding, execution, timeout/cancellation, output normalization, and recording. Native Python tools and MCP tools share the internal envelope but retain transport-specific adapters.
-
-### Policy/approval engine
-
-Evaluates identity, granted scopes, tool risk, resource limits, workspace/network policy, and human-approval requirements. A model's claim that a task is safe or authorized is never sufficient.
-
-### Execution broker and isolated workers
-
-A distinct boundary for filesystem, shell, browser, and arbitrary code. The broker accepts structured, policy-checked operations and dispatches to workers with explicit workspaces, identities, resource limits, and network rules. Do not implement arbitrary code execution in the API process. The concrete sandbox is an open Phase 0/10 decision based on host OS and threat model.
-
-### Persistence and event history
-
-PostgreSQL stores authoritative application state: agent versions, threads, messages, runs, steps, tool invocations, approvals, and run events. Run events are append-oriented for audit/reconstruction, but this does not automatically mean the entire application is event-sourced. State projections may be stored transactionally for efficient reads.
-
-### Observability and evaluation
-
-OpenTelemetry instrumentation produces traces/metrics/logs. A separate evaluation harness stores test cases and results. A trace is not a substitute for the durable run record; they have different retention and redaction requirements.
-
-## 3. Logical architecture diagram
+**Observability.** See [below](#observability).
 
 ```mermaid
 flowchart TB
     Client[API / SDK clients] --> API[FastAPI control plane]
     API --> RM[Run manager]
-    RM --> Runtime[Agent runtime loop]
+    RM --> Runtime[Agent runtime]
     Runtime --> Context[Context manager]
-    Runtime --> Router[Model gateway / router]
-    Router --> Ollama[Ollama local inference]
-    Router --> Providers[Optional provider adapters]
-    Runtime --> Policy[Policy and approval engine]
-    Runtime --> Orchestrator[In-process orchestration engine]
-    Orchestrator --> Scheduler[Dependency scheduler]
-    Scheduler --> Dispatcher[Tool dispatcher]
-    Dispatcher --> Native[Native Python tools]
+    Runtime --> Router[Model gateway]
+    Router --> Ollama[Ollama]
+    Router --> Providers[Optional remote providers]
+    Runtime --> Policy[Policy engine]
+    Runtime --> Orchestrator[Orchestrator]
+    Orchestrator --> Dispatcher[Tool dispatcher]
+    Dispatcher --> Native[Native tools]
     Dispatcher --> MCP[MCP client adapter]
     Dispatcher --> Broker[Execution broker]
     MCP --> MCPServers[External MCP servers]
-    Broker --> Sandbox[Restricted worker / sandbox]
+    Broker --> Sandbox[Sandboxed worker]
     RM --> DB[(PostgreSQL)]
     Runtime --> DB
     Dispatcher --> DB
-    API --> Events[SSE event stream]
-    DB --> Events
-    Runtime --> OTel[OpenTelemetry instrumentation]
-    API --> OTel
-    Dispatcher --> OTel
+    DB --> Events[SSE event stream]
+    API --> Events
 ```
 
-## 4. Single tool-assisted run sequence
+## Trust boundaries
+
+| Actor | Role | Trust |
+|---|---|---|
+| API client | Creates runs, streams events, approves, cancels | Authenticated; request content untrusted |
+| Agent runtime | Builds context, calls models, interprets results | Trusted code |
+| Model | Produces text, structured output, tool-call proposals | Untrusted; never an authority |
+| Native tool | In-process application function | Trusted only for its declared capability |
+| MCP server | External tool provider | Separate trust domain; metadata and output untrusted |
+| Execution worker | Runs powerful operations | Separate boundary, least privilege |
+| PostgreSQL | Application state | Trusted, access-controlled |
+| Ollama | Local inference | Local service; keep it on loopback |
+
+## One tool-assisted run
 
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant A as API
-    participant R as Run Manager / Runtime
-    participant M as Model Adapter
-    participant P as Policy Engine
-    participant D as Tool Dispatcher
-    participant T as Tool
+    participant R as Runtime
+    participant M as Model adapter
+    participant P as Policy
+    participant D as Dispatcher
     participant DB as PostgreSQL
 
-    C->>A: POST /v1/runs (request, idempotency key)
-    A->>R: Create run
-    R->>DB: Persist run + run.created event
-    R->>M: Generate(context, tools, profile)
-    M-->>R: Tool-call proposal
-    R->>P: Authorize tool + arguments + run scope
-    P-->>R: Allow / deny / require approval
-    alt Allowed
-        R->>D: Execute validated invocation
-        D->>DB: Record invocation intent
-        D->>T: Execute with bounded context
-        T-->>D: Structured result/error
-        D->>DB: Persist outcome
-        D-->>R: Normalized tool result
-        R->>M: Continue with tool result
-        M-->>R: Final response
-        R->>DB: Persist message + run.completed event
-        R-->>C: Final response / streamed events
-    else Approval required
-        R->>DB: Persist approval request + paused state
-        R-->>C: approval.required event
-    else Denied
-        R->>DB: Persist denial and run outcome
-        R-->>C: Run denied/failed according to policy
+    C->>R: POST /v1/runs (input, idempotency key)
+    R->>DB: run + run.accepted
+    R->>M: generate(context, tools)
+    M-->>R: tool-call proposal
+    R->>P: authorise(tool, args, scope)
+    alt allowed
+        R->>D: execute
+        D->>DB: invocation intent
+        D-->>R: normalised result
+        D->>DB: invocation outcome
+        R->>M: generate(context + result)
+        M-->>R: final answer
+        R->>DB: message + run.completed
+    else needs approval
+        R->>DB: approval request, run paused
+        R-->>C: approval.required
+    else denied
+        R->>DB: denial, run outcome
     end
 ```
 
-## 5. Deployment shape
+## Dependency rules
 
-### Initial local development
+- `domain` imports no framework, ORM, provider SDK, MCP SDK, or Temporal code.
+- `application` defines use cases and ports; infrastructure implements the ports.
+- `runtime` reaches models through model ports and tools through the dispatcher port.
+- `orchestration` is deterministic for a given plan, state, and input. Plan validation never calls a model.
+- Infrastructure (API, database, providers, MCP, telemetry, execution) lives in adapters.
 
-- One Python API/runtime process.
-- One Ollama process/service.
-- One PostgreSQL instance.
-- Optional native tool code in-process only when trusted and low-risk.
-- Restricted execution workers are added before enabling powerful execution.
-- Test fakes for model, tools, database repository, clock, and scheduler where practical.
+## Source layout
 
-### Later, if justified
+The target shape. Create directories as their phase starts, not all at once.
 
-- Separate API and worker processes.
-- Temporal for durable workflows.
-- TypeScript MCP servers or clients for Node-native integrations.
-- Go/Rust execution service for measured resource/isolation/deployment needs.
-- Optional telemetry collector and dashboards.
+```text
+pyproject.toml, uv.lock, .python-version   # Phase 1
+src/agent_platform/
+    domain/  application/  runtime/  orchestration/  models/
+    tools/  security/  persistence/  api/  observability/
+tests/{unit,integration,contract,evaluation,security}/
+evals/        # versioned evaluation cases and harness
+infra/compose/
+scripts/
+docs/
+```
 
-## 6. Dependency rules
+Directories are modules in one package, not separate services or distributions.
 
-- `domain` must not import FastAPI, SQLAlchemy, Ollama SDKs, MCP SDKs, or Temporal.
-- `application` defines use cases and ports/interfaces; infrastructure implements ports.
-- `runtime` coordinates model interactions through model ports and tools through dispatcher ports.
-- `orchestration` should be deterministic for a given plan/state/input and should not call LLMs from graph-validation code.
-- `infrastructure` contains API, database, model-provider, MCP, telemetry, and execution adapters.
-- Temporal workflow code, if added, must obey deterministic workflow constraints; network, file, model, database and process side effects belong in activities.
+## Deployment
 
-## 7. Deferred architecture choices
+Initially: one Python process (API and runtime), Ollama, PostgreSQL, and in-process native tools that are trusted and low-risk. Restricted workers arrive before any powerful execution tool does.
 
-- Exact Python minor version and dependency set.
-- PostgreSQL major version.
-- ASGI server configuration and separate worker topology.
-- SQLAlchemy async driver (psycopg 3 or asyncpg) after compatibility/profiling.
-- Sandbox backend and host-specific implementation.
-- Exact model router policy and fallback semantics.
-- Whether and when Temporal is adopted.
-- Artifact/object storage backend.
+Later, if justified: separate API and worker processes, Temporal, TypeScript MCP servers, a Go or Rust execution service, a telemetry collector and dashboards.
 
-These choices are tracked in the relevant ADRs and research notes.
+## Observability
+
+Three separate data products:
+
+- **Run event history** in PostgreSQL: the authoritative record of what a run did. Used for inspection, audit, and client replay.
+- **Traces** via OpenTelemetry. One span per causal operation: `api.request` → `agent.run` → `context.build`, `model.generate`, `policy.evaluate`, `tool.execute`, `approval.wait`. GenAI semantic conventions are still evolving, so pin the version you adopt.
+- **Structured logs and metrics**, carrying run, step, and correlation IDs. Metrics cover run counts and durations, model and tool latency and errors, in-flight work, approval waits, and budget exhaustion.
+
+Rules:
+
+- Metric labels stay bounded: no run IDs, prompts, paths, user IDs, or tool names taken from untrusted sources.
+- Record metadata and digests by default, not raw prompts, tool payloads, file contents, headers, or secrets. Debug payload capture is opt-in, access-controlled, and time-limited.
+- Start with structured logs and the OTel SDK. A Collector with Grafana, Tempo, and Prometheus is an optional Compose profile once traces are worth looking at. Unit tests never need the telemetry stack.
+
+## Deferred choices
+
+Python minor version · PostgreSQL major version and driver · ASGI and worker topology · sandbox backend · router policy and fallback · Temporal adoption · artifact storage backend. Each is tracked in an ADR or research note.

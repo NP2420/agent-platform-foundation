@@ -1,0 +1,20 @@
+# Architecture Decision Records
+
+One file per material decision. An ADR is never edited to reverse a decision: write a new one and mark the old one Superseded.
+
+| ADR | Decision | Status |
+|---|---|---|
+| [0001](0001-api-first.md) | API and SDK are the product boundary | Accepted |
+| [0002](0002-polyglot-boundaries.md) | Languages chosen per subsystem, not microservices by default | Accepted |
+| [0003](0003-python-agent-runtime.md) | Python for the agent runtime | Accepted; interpreter version open |
+| [0004](0004-model-provider-abstraction.md) | Provider-neutral model gateway, Ollama first | Accepted |
+| [0005](0005-native-tools-and-mcp.md) | One tool contract for native and MCP tools | Accepted |
+| [0006](0006-in-process-before-temporal.md) | In-process orchestrator before Temporal | Accepted |
+| [0007](0007-postgresql-system-of-record.md) | PostgreSQL as system of record | Accepted; version and driver open |
+| [0008](0008-execution-isolation-boundary.md) | Separate execution broker for powerful capabilities | Accepted; sandbox open |
+| [0009](0009-local-first-self-hosted.md) | Local-first, self-hosted | Accepted |
+| [0010](0010-windows-hosted-ollama-initial-deployment.md) | Windows-hosted Ollama via WSL mirrored networking | Accepted for development |
+
+## Writing one
+
+Use the existing files as the template: Status, Date, Context, Decision, Consequences, Revisit when. Before writing, state the problem and the evidence, list the alternatives, check sources and versions, and run an experiment if the answer depends on the workload. Afterwards, update any spec the decision affects.

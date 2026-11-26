@@ -1,23 +1,23 @@
-# ADR 0005: Unified Internal Tool Contract for Native Tools and MCP
+# ADR 0005: One Tool Contract for Native and MCP Tools
 
-- **Status:** Accepted direction
+- **Status:** Accepted
 - **Date:** 2026-11-25
 
 ## Context
 
-The platform needs direct local application tools and standardized external tools. MCP provides interoperability but should not define all internal orchestration behavior.
+The platform needs both direct in-process tools and standardised external ones. MCP provides interoperability, but it shouldn't dictate internal orchestration or authorisation.
 
 ## Decision
 
-Use one internal registry/dispatcher/policy contract for native Python tools and MCP-backed tools. Use official MCP SDKs as adapters. Tool schemas, permissions, risk, side effects, timeout, retry, and idempotency metadata are part of trusted tool registration/configuration.
+Native Python tools and MCP-backed tools share one registry, dispatcher, and policy contract. The official MCP SDKs act as adapters. Schemas, permissions, risk, side effects, timeouts, retries, and idempotency are part of trusted local registration.
 
 ## Consequences
 
-- MCP is not the authorization engine, scheduler, database, or sandbox.
-- MCP server metadata/tool output is untrusted.
-- Every invocation is validated and authorized locally before dispatch.
-- SDK/protocol versions must be pinned and contract-tested.
+- MCP is not the authorisation engine, scheduler, database, or sandbox.
+- MCP server metadata and output are untrusted.
+- Every invocation is validated and authorised locally before dispatch.
+- SDK and protocol versions are pinned and contract-tested.
 
 ## Revisit when
 
-A tool category requires a different protocol or isolated execution backend, while preserving the common policy/audit envelope.
+A tool category needs a different protocol or execution backend. Even then, the common policy and audit envelope stays.

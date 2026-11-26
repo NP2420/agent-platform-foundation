@@ -1,23 +1,23 @@
-# ADR 0004: Provider-Neutral Model Gateway with Ollama First
+# ADR 0004: Provider-Neutral Model Gateway, Ollama First
 
-- **Status:** Accepted direction
+- **Status:** Accepted
 - **Date:** 2026-11-25
 
 ## Context
 
-The system is local/self-hosted and seeks to minimize recurring cost. It should not become coupled to Ollama or one model, while supporting logical model profiles for different tasks.
+The system is local and low-cost, but should not be tied to Ollama or to any one model. It also needs logical roles for different kinds of work.
 
 ## Decision
 
-Define internal model request/response contracts and provider adapters. Implement Ollama first, plus a fake adapter for deterministic tests. Support logical profiles such as primary, fast, summarizer, specialist, and evaluator. Initially, one model may back multiple profiles. The runtime/router chooses invocations; model output cannot spawn work or change policy by itself.
+Define internal model request and response contracts, with provider adapters behind them. Implement Ollama first, plus a fake adapter for deterministic tests. Support logical profiles (primary, fast, summarizer, specialist, evaluator); one model may back several at first. The runtime and router decide which model calls happen; model output cannot spawn work or change policy.
 
 ## Consequences
 
-- Capability differences across model/provider/runtime combinations must be represented and tested.
-- Do not promise parity for tools, structured output, vision, streaming, or parallel calls.
-- Routing is initially explicit/configurable; automated selection follows benchmark evidence.
-- Remote fallback must be explicitly permitted by data policy.
+- Capability differences between models, providers, and runtimes are represented and tested, not hidden.
+- No promise of parity for tools, structured output, vision, streaming, or parallel calls.
+- Routing starts as explicit configuration; automatic selection follows benchmark evidence.
+- Remote fallback requires an explicit data policy.
 
 ## Revisit when
 
-Model count/provider complexity justifies a gateway such as LiteLLM, or evaluation shows another serving runtime better fits the hardware/workload.
+The number of providers justifies a gateway such as LiteLLM, or evaluation shows another serving runtime fits the hardware better.

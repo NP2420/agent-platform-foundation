@@ -1,21 +1,14 @@
-# Tool Platform Specification
+# Tools
 
-**Status:** Native tools and MCP tools are agreed directions. Exact contracts are to be finalized before implementation.
+**Status:** Native and MCP tools are accepted. Contracts are finalised before Phase 5.
 
-## 1. Tool platform responsibilities
+## Responsibilities
 
-- discover/register approved tools;
-- provide the model with an appropriately scoped tool description/schema;
-- validate proposed arguments at runtime;
-- check authorization and policy outside the model;
-- execute with controlled identity, timeout, cancellation, concurrency, and resource policy;
-- normalize outputs/errors;
-- persist invocation intent/outcome and emit events;
-- enforce data redaction and trust boundaries.
+The tool platform registers approved tools; shows the model a scoped set of definitions; validates proposed arguments; checks policy outside the model; executes with controlled identity, timeout, cancellation, and concurrency; normalises output and errors; and records intent and outcome.
 
-## 2. Unified internal tool contract
+## Tool definition
 
-A conceptual definition:
+Illustrative only. The real version uses enums and immutable value objects.
 
 ```python
 class ToolDefinition:
@@ -33,66 +26,57 @@ class ToolDefinition:
     execution_backend: str
 ```
 
-This is illustrative, not final code. Prefer explicit enums/value objects and immutable definitions in implementation. Do not trust risk, permission, or execution-backend fields supplied by the model; derive these from registered configuration.
+Risk, scopes, side effects, and backend come from trusted registration, never from the model or an MCP server.
 
-Each invocation should include a stable invocation ID, run/step ID, caller identity, tool version, validated arguments, policy decision, deadline, idempotency key when relevant, and correlation metadata.
+Each invocation carries an invocation ID, run and step IDs, caller identity, tool version, validated arguments, the policy decision, a deadline, an idempotency key where relevant, and correlation metadata.
 
-## 3. Tool categories
+## Tool kinds
 
-### Native tools
+**Native tools.** In-process functions for trusted, bounded capabilities. Small, typed, with explicit side effects. Native does not mean safe: a function can still read secrets or reach the network.
 
-Direct in-process functions for trusted, bounded application capabilities. Keep them small, typed, and side-effect explicit. Native does not mean automatically safe: a function can still read secrets, access files, or make network requests.
+**MCP tools.** Discovered and called through an MCP client adapter. MCP is an interoperability protocol, not our scheduler, database, authorisation system, or isolation boundary. Server metadata and outputs are untrusted. A server's own description of a tool grants it nothing.
 
-### MCP tools
+**Execution tools** (later). Filesystem, shell, browser, and code go through the execution broker. There is never a generic `shell` tool inside the API or runtime process.
 
-External capabilities discovered and invoked through an MCP client adapter. MCP provides interoperability for tools/resources/prompts; it is not our scheduler, database, application authorization system, or isolation boundary.
+## Invocation lifecycle
 
-MCP server metadata and tool outputs are untrusted. Enforce local allowlists, scopes, timeouts, response-size limits, and output handling. The MCP server's own tool definition does not grant it permission to act on behalf of the local user.
+1. The model proposes a name and arguments.
+2. Check the tool exists in the run's allowed registry snapshot.
+3. Validate the arguments against the schema. Reject extra fields.
+4. Look up risk, scopes, side effects, and backend from trusted configuration.
+5. Policy decides: allow, deny, or require approval.
+6. The dispatcher checks deadline, concurrency, resources, and idempotency.
+7. Persist intent before any external side effect that needs recovery.
+8. Execute through the native, MCP, or broker adapter.
+9. Normalise and size-limit the output, and label it as untrusted.
+10. Persist the result, or record an uncertain outcome, and emit events.
+11. Return the sanitised result to the model.
 
-### Future execution tools
+A database transaction cannot atomically include a remote side effect. Model that gap explicitly.
 
-Filesystem, shell, browser automation, and arbitrary code should use an execution broker and isolated worker. Do not expose a generic unrestricted `shell` function inside the main API/runtime process.
+## Errors
 
-## 4. Invocation lifecycle
+Distinguish: schema invalid, unknown or unavailable tool, not authorised, approval required, rate limited, timed out, cancelled, remote error, protocol error, output invalid or too large, and outcome unknown. Never return secrets or raw stack traces to the model. Retry behaviour comes from the tool's retry profile and idempotency mode.
 
-1. Model proposes tool name and arguments.
-2. Runtime verifies the tool exists in the run's allowed registry snapshot.
-3. Validate the arguments against the schema and reject additional/ambiguous fields according to policy.
-4. Derive risk, required scopes, side-effect class, and backend from trusted tool configuration.
-5. Policy engine authorizes, denies, or creates an approval request.
-6. Dispatcher checks deadlines, concurrency, resource, and idempotency rules.
-7. Persist invocation intent before performing an external side effect when required by the operation's recovery contract.
-8. Execute through native/MCP/broker adapter.
-9. Normalize and size-limit output; treat returned content as untrusted data.
-10. Persist result or uncertain outcome and emit lifecycle events.
-11. Return sanitized result to the agent context.
+## MCP requirements
 
-Exact database transaction behavior depends on whether the operation is local, database-backed, or remote. A transaction cannot atomically include an arbitrary remote API side effect.
+- Use the official Python SDK first; the TypeScript SDK is for Node-native servers.
+- Pin the SDK version and protocol revision, and check migration notes when implementing.
+- Write protocol contract tests.
+- Keep the server session lifecycle separate from the run lifecycle.
+- Scope server connections and allowed tools to the requesting identity and run.
+- Handle disconnects and stale capability lists.
+- Never import executable code supplied by an MCP server.
 
-## 5. Error model
+## Policy
 
-Distinguish schema invalid, tool unavailable, not authorized, approval required, rate-limited, timed out, cancelled, remote error, protocol error, output invalid/too large, and outcome unknown. Do not return raw secrets or unrestricted stack traces to the model. Retry decisions derive from an explicit retry profile and side-effect/idempotency behavior.
+- Deny by default; each agent and run gets the least privilege it needs.
+- An approval binds to the exact operation, an argument digest, the identity, and an expiry. Changed arguments need a new approval.
+- Write and sensitive tools must have an explicit risk classification.
+- Tool output can carry prompt injection. Delimit it as untrusted and never let it override policy.
+- Bound output size, execution time, and concurrency.
+- Audit the tool version, identity, input digest, policy result, and outcome, subject to redaction.
 
-## 6. MCP implementation requirements
+## Tests
 
-- Use the official Python SDK for the initial Python MCP client/server work; TypeScript SDK is available for Node-native integrations.
-- Verify SDK version, current MCP protocol revision, transport, authentication, and migration guidance when implementing; the MCP SDK major versions and examples can change.
-- Pin SDK versions and add protocol contract tests.
-- Distinguish server transport/session lifecycle from application run lifecycle.
-- Scope server connections and allowed tools to the requesting identity/run.
-- Handle server disconnects and stale capability definitions.
-- Do not permit untrusted MCP servers to supply executable code to be imported into the trusted application.
-
-## 7. Security policy
-
-- Deny by default.
-- Least-privilege tool exposure per agent/run.
-- Approval tied to a specific operation, arguments or argument digest, identity, and expiry; changed arguments require a new decision.
-- Sensitive/write tools require explicit policy classification.
-- Tool output can contain prompt injection; delimit/label it as untrusted and never let it override system policy.
-- Bound output size, execution time, response count, and concurrency.
-- Audit tool version, identity, input digest, policy result, and outcome while applying privacy/redaction rules.
-
-## 8. Tests
-
-Native/MCP parity on the common envelope; schema rejection; unknown tool; unauthorized tool; changed arguments after approval; timeout; cancellation; oversized output; malformed protocol response; server disconnect; duplicate invocation; uncertain side-effect outcome; and prompt-injection content returned by a tool.
+Native and MCP produce the same envelope; schema rejection; unknown tool; unauthorised tool; arguments changed after approval; timeout; cancellation; oversized output; malformed protocol response; server disconnect; duplicate invocation; uncertain side-effect outcome; prompt injection in tool output.

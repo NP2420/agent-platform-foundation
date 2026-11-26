@@ -1,40 +1,36 @@
-# Data Model and Persistence Specification
+# Data Model
 
-**Status:** PostgreSQL is the proposed application system of record. Entity names and schema details are conceptual until Phase 7.
+**Status:** PostgreSQL is accepted as the system of record. Tables and columns are conceptual until Phase 7. The major version and driver are open ([research note](research/POSTGRES_18_VS_19.md)).
 
-## 1. Storage principles
+## Principles
 
-- Store application truth in PostgreSQL; do not use Temporal history or telemetry traces as a substitute for application records.
-- Separate conversation/thread identity from execution/run identity.
-- Bind runs to immutable agent configuration versions.
-- Keep run events append-oriented for audit and reconstruction, while allowing transactional state projections for efficient queries.
-- Do not call the design “event sourcing” unless all authoritative state is actually rebuilt from events and the required replay/migration semantics are implemented.
-- Use JSONB for bounded provider/tool payloads where schema evolution benefits from it, but retain important searchable/relational fields as typed columns.
-- External side effects cannot be committed atomically with a local database transaction. Model uncertain outcomes explicitly.
+- PostgreSQL holds application truth. Temporal history and telemetry are not substitutes.
+- A thread (conversation) and a run (one execution) are separate entities.
+- Each run references an immutable agent configuration version.
+- Run events are append-only, for audit and replay; current-state tables exist for fast queries. This is not event sourcing, and the docs shouldn't call it that.
+- JSONB for bounded provider and tool payloads; typed columns for anything that is queried or constrained.
+- A local transaction cannot include a remote side effect. Uncertain outcomes are modelled explicitly.
+- Transactions stay short and never span a model or network call.
 
-## 2. Initial entities
+## Entities
 
-| Entity/table (provisional) | Purpose | Important relationships |
-|---|---|---|
-| `agent_definitions` | Stable logical agent identity | Has versions |
-| `agent_versions` | Immutable instructions/configuration/tool grants/model policy | Belongs to definition; referenced by runs |
-| `model_profiles` | Logical role and routing policy | May reference model deployments |
-| `threads` | Conversation or interaction container | Has messages and runs |
-| `messages` | User/assistant/tool messages and content blocks | Belongs to thread; optionally run/step |
-| `runs` | One execution attempt | Belongs to thread and agent version; has steps/events |
-| `run_steps` | Model, tool, planning, approval, or workflow step | Belongs to run; parent/dependency references as needed |
-| `run_events` | Append-oriented run lifecycle/audit events | Belongs to run; monotonically sequenced per run |
-| `tool_definitions` | Versioned registered tool metadata | Referenced by invocations |
-| `tool_invocations` | Tool operation intent, attempt, result, and outcome state | Belongs to run/step and tool version |
-| `approvals` | Approval request/decision tied to exact action | Belongs to run and invocation/step |
-| `artifacts` | Metadata for files/results produced by runs | Belongs to run; bytes may be stored on disk/object storage |
-| `evaluation_cases` | Versioned evaluation inputs and expected criteria | Independent test corpus |
-| `evaluation_runs` | Evaluation execution metadata | Has case results |
-| `evaluation_case_results` | Per-case output, score, grader, and evidence | Belongs to evaluation run/case |
+| Table | Purpose |
+|---|---|
+| `agent_definitions` | Stable logical agent identity |
+| `agent_versions` | Immutable instructions, tool grants, model policy |
+| `model_profiles` | Role and routing policy |
+| `threads` | Conversation container |
+| `messages` | User, assistant, and tool messages with content blocks |
+| `runs` | One execution: current state, budgets, result reference |
+| `run_steps` | A model, tool, planning, or approval step |
+| `run_events` | Append-only lifecycle facts, sequenced per run |
+| `tool_definitions` | Versioned tool registrations |
+| `tool_invocations` | Intent, attempt, result, and outcome state |
+| `approvals` | A request and decision tied to one exact action |
+| `artifacts` | Metadata for files produced by runs (bytes stored elsewhere) |
+| `evaluation_cases`, `evaluation_runs`, `evaluation_case_results` | Versioned evaluation corpus and results |
 
-Add `tenant` or organization entities only when a real multi-user isolation requirement exists. The local-first design should still scope records to a local principal/workspace as needed, but avoid speculative multitenancy.
-
-## 3. Conceptual relationships
+No tenant or organisation tables until multi-user isolation is a real requirement.
 
 ```mermaid
 erDiagram
@@ -53,33 +49,29 @@ erDiagram
     EVALUATION_CASE ||--o{ EVALUATION_CASE_RESULT : evaluated_as
 ```
 
-## 4. Run/event semantics
+## Runs and events
 
-`runs` stores the current queryable run state and stable fields (IDs, state, timestamps, agent version, thread, budgets, terminal result reference). `run_events` records meaningful state transitions and execution facts such as run accepted, model invocation requested/completed, tool approved/denied/started/completed, approval requested/decided, cancellation requested, and terminal outcome.
+`runs` holds the current state and the stable fields. `run_events` records facts: accepted, model requested and completed, tool approved, denied, started, and completed, approval requested and decided, cancellation requested, terminal outcome.
 
-A per-run sequence or equivalent ordering mechanism should establish an unambiguous order for events. Design idempotent event insertion so retries do not create duplicate logical events. Event payloads should be versioned and bounded; large outputs/files should be artifact references, not embedded event blobs.
+Events have a per-run sequence number and idempotent insertion, so a retry cannot duplicate a logical event. Payloads are versioned and bounded; large outputs are stored as artifact references.
 
-## 5. Idempotency and transactions
+## Idempotency
 
-- Client `Idempotency-Key` applies to run creation and is scoped to caller/endpoint semantics.
-- Tool invocation idempotency is distinct from run creation idempotency.
-- Use unique constraints and transaction boundaries for claims/records.
-- Persist external operation intent before execution when required; reconcile the result afterward.
-- A worker crash between remote success and local result persistence creates an ambiguous outcome. Use provider-supported idempotency keys or read-after-write status reconciliation; otherwise record “unknown” and require a defined recovery/manual policy.
-- Never claim exactly-once side effects across arbitrary systems.
+- A client `Idempotency-Key` applies to run creation, scoped to caller and endpoint.
+- Tool invocation idempotency is a separate mechanism.
+- Claims and records are protected by unique constraints and transactions.
+- Persist intent before an external operation; reconcile afterwards.
+- A crash between remote success and the local write leaves an ambiguous outcome. Resolve it with the remote side's idempotency key or a status check; otherwise record `unknown` and apply a defined recovery policy.
+- No claim of exactly-once effects across arbitrary systems.
 
-## 6. Async database access
+## Async access
 
-If SQLAlchemy async is selected, an `AsyncSession` is stateful and should not be shared across concurrent tasks. Use session/transaction scopes appropriate to a single asyncio task/unit of work. Do not pass a live session through a long-running agent context or hold transactions open while waiting for model/network calls.
+SQLAlchemy's `AsyncSession` is stateful and must not be shared between concurrent tasks. Use one session per unit of work. Never pass a live session through long-running agent context or hold a transaction open while waiting on a model or the network.
 
-## 7. Artifacts
+## Artifacts
 
-Store artifact metadata (owner/run, path or object key, media type, size, checksum, retention, classification, creation time) in PostgreSQL. Store bytes on local disk or a later object-store-compatible backend. Resolve paths through an artifact service; never let model/tool output choose arbitrary host paths. Apply quotas, path normalization, cleanup, and access controls.
+PostgreSQL stores the metadata: owner, run, path or object key, media type, size, checksum, retention, classification. The bytes go on local disk, or an object store later. Paths resolve through an artifact service; model or tool output never chooses a host path. Quotas, path normalisation, cleanup, and access control all apply.
 
-## 8. Retention and privacy
+## Retention
 
-Define retention separately for messages, raw model/tool payloads, audit events, traces, and artifacts. Provide redaction/deletion behavior that preserves required audit semantics without retaining sensitive content unnecessarily. Do not retain full raw prompts/tool outputs by default if metadata/digests suffice for debugging.
-
-## 9. Database evaluation
-
-See `research/POSTGRES_18_VS_19.md`. Version/driver decision must consider compatibility, migrations/extensions, backup/restore tooling, concurrency correctness, query plans, index behavior, autovacuum, and representative workload performance—not only feature novelty.
+Retention is defined separately for messages, raw model and tool payloads, audit events, traces, and artifacts. Deletion and redaction keep required audit facts without keeping sensitive content. Raw prompts and tool output are not stored by default when metadata or digests are enough.

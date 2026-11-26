@@ -1,23 +1,23 @@
-# ADR 0003: Python as Primary Agent Runtime
+# ADR 0003: Python for the Agent Runtime
 
-- **Status:** Accepted direction; exact interpreter version open
+- **Status:** Accepted; interpreter version open
 - **Date:** 2026-11-25
 
 ## Context
 
-The core runtime requires model integrations, structured data validation, evaluation tooling, asynchronous I/O, and rapid experimentation. Python has a strong ecosystem for these workloads.
+The runtime needs model integrations, structured validation, evaluation tooling, async I/O, and fast iteration. Python's ecosystem covers all of these.
 
 ## Decision
 
-Implement the first agent runtime, orchestration logic, and API in Python. Prefer a modular monolith with explicit domain/application/infrastructure boundaries. Python 3.14.x is the conservative initial interpreter candidate; test 3.15.x compatibility before pinning.
+The first runtime, orchestrator, and API are written in Python as a modular monolith with domain, application, and infrastructure layers. Python 3.14.x is the starting interpreter candidate; 3.15.x gets tested before the version is pinned.
 
 ## Consequences
 
-- Provider/MCP/DB dependencies must be checked against the selected Python minor.
-- Use `uv` and commit `uv.lock` for reproducibility.
-- Use Pydantic at boundaries where useful; keep domain contracts independent of FastAPI/SQLAlchemy/provider SDKs.
-- TypeScript/Go/Rust remain allowed for justified adjacent components.
+- The provider, MCP, and database dependencies must all support the chosen minor version.
+- `uv` manages the environment, and `uv.lock` is committed.
+- Pydantic is used at boundaries; domain contracts stay free of FastAPI, SQLAlchemy, and provider SDKs.
+- TypeScript, Go, and Rust remain available for justified adjacent components (ADR 0002).
 
 ## Revisit when
 
-A concrete performance, deployment, ecosystem, or security requirement demonstrates that another language is materially better for a subsystem.
+A concrete performance, deployment, ecosystem, or security requirement shows another language is materially better for a subsystem.

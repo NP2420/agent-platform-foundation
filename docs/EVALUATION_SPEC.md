@@ -1,86 +1,80 @@
-# Evaluation and Testing Specification
+# Testing and Evaluation
 
-## 1. Purpose
+The platform has two kinds of correctness:
 
-The platform has two different correctness problems:
+1. **Software correctness:** state transitions, schemas, transactions, concurrency, authorisation, errors, APIs. Deterministic, so assert exact results.
+2. **Agent quality:** whether the model picks the right tool, supplies correct arguments, respects constraints, and finishes the task. Probabilistic, so measure rates over versioned cases.
 
-1. Conventional software correctness: state transitions, schemas, transactions, concurrency, authorization, error handling, and APIs.
-2. Probabilistic agent quality: whether a model selects appropriate tools, supplies correct arguments, follows constraints, and completes tasks.
+A high task score never compensates for a security flaw or a broken invariant.
 
-These require related but distinct test strategies. A high task score does not compensate for a security flaw or a broken state invariant.
+## Test layers
 
-## 2. Test layers
-
-| Layer | Scope | External dependencies |
+| Layer | Scope | Dependencies |
 |---|---|---|
-| Unit | Domain, state machine, schemas, policy, graph validator, budget accounting | None; use fakes |
-| Property/state | State invariants, graph properties, serialization, randomized failure sequences | Usually none |
-| Contract | Model adapters, native tools, MCP adapter, API/event schemas | Fake servers or provider fixtures |
-| Integration | Runtime + database + Ollama + selected MCP test server | Local services |
-| Failure injection | Timeouts, worker crash, DB interruption, duplicate delivery, uncertain side effect | Controlled test environment |
-| Security | Prompt injection, permission bypass, sandbox escape attempts, data leakage | Dedicated isolated environment |
-| Agent evaluation | Task completion, tool choice/arguments, output criteria, policy adherence | Real or recorded model responses |
-| Performance/load | Throughput, latency, resource use, queueing, concurrency | Representative local stack |
+| Unit | Domain, state machine, schemas, policy, plan validation, budgets | None (fakes) |
+| Property | Invariants, graph properties, serialisation, random failure sequences | None |
+| Contract | Model adapters, tools, MCP adapter, API and event schemas | Fake servers, fixtures |
+| Integration | Runtime with PostgreSQL, Ollama, and an MCP test server | Local services |
+| Failure injection | Timeouts, worker crashes, DB loss, duplicate delivery, uncertain side effects | Controlled environment |
+| Security | Injection, permission bypass, sandbox escape, data leakage | Isolated environment |
+| Agent evaluation | Task success, tool choice and arguments, policy adherence | Real or recorded model output |
+| Performance | Latency, throughput, resource use, queueing | Representative local stack |
 
-## 3. Deterministic test harness
+## Deterministic harness
 
-Core runtime tests must run with fake model and fake tool adapters. Fakes should allow scripted responses and errors. A test should be able to reproduce the same sequence of model responses, tool results, clocks, IDs, and failures. Use deterministic seeds where randomness is relevant.
+Core runtime tests use scripted fake model and tool adapters. A test can replay the same sequence of model responses, tool results, clock values, IDs, and failures. Assert exact states, events, and contracts; don't assert exact model prose where semantic criteria are what matter.
 
-Avoid brittle tests that assert an LLM's exact prose when semantic criteria are intended. For deterministic software paths, assert exact state/events/output contracts.
+## Evaluation cases
 
-## 4. Versioned evaluation cases
+Each case records:
 
-A case should record:
-
-- stable ID and version;
-- task prompt/input and relevant fixture data;
-- expected capabilities/allowed tools;
-- expected constraints and prohibited actions;
+- an ID and version;
+- the prompt and fixture data;
+- the allowed tools and the expected tool behaviour;
+- constraints and prohibited actions;
 - success criteria and grading method;
-- difficulty/tags and known limitations;
-- model, model digest/version, prompt/agent version, tool registry version, and runtime version used for results.
+- tags and known limitations.
 
-Evaluation dataset changes should be reviewed and versioned. Keep training/prompt-development examples distinct from hidden regression cases where practical to reduce overfitting.
+Each result records the model digest, prompt or agent version, tool registry version, runtime version, and settings.
 
-## 5. Metrics
+Cases are versioned and reviewed. Keep the examples used during prompt development separate from held-out regression cases.
 
-Measure per-task category, not only one overall number:
+Model screening cases are listed in [MODEL_SPEC.md](MODEL_SPEC.md#evaluation-plan).
 
-- task success/criteria satisfaction;
-- correct tool selection and tool-call precision/recall where labeled;
+## Metrics
+
+Report per task category, not one overall number:
+
+- task success;
+- tool selection precision and recall;
 - argument validity and semantic correctness;
-- policy compliance and unauthorized-action attempts;
-- hallucinated tool/result claims;
-- final answer factuality/faithfulness for tasks with references;
-- recovery success after transient failures;
-- p50/p95 latency and time-to-first-token;
-- model/tool invocations per task;
-- token/resource usage (mark provider estimates/unknowns);
-- peak RAM/VRAM and throughput under concurrency;
-- run completion, failure, cancellation, and timeout rates.
+- policy compliance and unauthorised attempts;
+- hallucinated tool calls or results;
+- final-answer faithfulness, where there is a reference;
+- recovery after transient failures;
+- p50 and p95 latency and time to first token;
+- calls per task;
+- tokens and resource use;
+- completion, failure, cancellation, and timeout rates.
 
-Report sample size, confidence/uncertainty, and failure examples. Do not compare models using dissimilar prompts, hardware, quantization, or evaluation sets without noting the differences.
+Always include the sample size and failure examples. Never compare models across different prompts, hardware, quantisation, or case sets without saying so.
 
-## 6. Grading
+## Grading
 
-Use deterministic exact/schema checks when possible, reference-based graders where reliable, and rubric/LLM judges only when justified. Calibrate automated judges against a human-reviewed sample; track disagreements and judge drift. Never use an LLM judge as the sole evidence for security-critical behavior.
+Prefer exact and schema checks, then reference-based graders. Use LLM judges only where they are justified, calibrate them against a human-reviewed sample, and track drift. An LLM judge is never the only evidence for security behaviour.
 
-## 7. Regression policy
+## Regressions
 
-A change to prompts, model profile, tool schema, scheduler, or context construction can alter agent quality. Maintain a small fast smoke evaluation and a larger scheduled/manual suite. Define regression thresholds after the first measured baseline; avoid arbitrary pass percentages before data exists. Critical safety regressions should block release regardless of aggregate task score.
+Prompts, model profiles, tool schemas, the scheduler, and context construction can all change agent quality. Keep a fast smoke suite and a larger manual or scheduled suite. Set thresholds after the first measured baseline, not before. Critical safety regressions block a release whatever the aggregate score.
 
-## 8. Failure-injection scenarios
+## Failure-injection scenarios
 
-- model timeout, server restart, malformed response, unsupported tool-call format;
-- MCP disconnect, invalid schema, duplicate tool response, oversized output;
-- database disconnect before/after side effect intent/outcome persistence;
-- worker crash during tool execution;
-- duplicate run creation, retry, approval, or cancellation command;
-- resource budget exhaustion and concurrency saturation;
-- approval argument mutation and expiry;
-- cancellation during model request and during side-effecting tool execution;
-- model/tool output carrying prompt injection or secret-like content.
-
-## 9. Release gate
-
-A release must have reproducible test/evaluation results for the supported environment, known limitations, resolved critical security failures, and explicit review of any quality regression. See `PRODUCTION_READINESS.md`.
+- Model timeout, server restart, malformed response, unsupported tool-call format.
+- MCP disconnect, invalid schema, duplicate response, oversized output.
+- Database loss before or after an intent or outcome write.
+- Worker crash mid-tool.
+- Duplicate run creation, approval, or cancel.
+- Budget exhaustion and concurrency saturation.
+- Approval argument mutation and expiry.
+- Cancellation during a model call and during a side-effecting tool.
+- Prompt injection or secret-like content in model or tool output.

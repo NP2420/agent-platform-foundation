@@ -1,92 +1,108 @@
 # Project Charter
 
-**Status:** Agreed scope and direction; detailed implementation choices remain subject to the status labels in the rest of this package.
+## Purpose
 
-## 1. Purpose
+Build a reusable, self-hosted, general-purpose agent platform: a controlled runtime where models reason, request tools, run bounded workflows, delegate work, and produce outcomes that can be inspected afterwards.
 
-Design and build a reusable, self-hosted, general-purpose AI agent platform. The platform should provide a controlled runtime in which models can reason, request tools, execute bounded workflows, delegate work, and produce inspectable outcomes. The project is also a structured learning effort in production software, AI engineering, distributed systems, reliability, and security.
+It is equally a learning project in production software, AI engineering, distributed systems, reliability, and security. The aim is not to clone a commercial product or pile up abstractions. It is a system whose design, tests, security boundaries, and trade-offs hold up to serious review for a clearly stated scope.
 
-The goal is not to reproduce a named commercial product or maximize the number of abstractions. The goal is a system whose architecture, behavior, tests, security boundaries, operational model, and trade-offs can withstand a serious engineering review for a clearly stated deployment scope.
+## Goals
 
-## 2. Goals
+1. A custom, provider-independent agent loop.
+2. A common contract for model calls and model profiles.
+3. Local inference through Ollama.
+4. Tiered model profiles (primary, fast, summarizer, specialist, evaluator) without needing several models in the first slice.
+5. One tool registry and dispatcher for native and MCP tools, behind one policy check.
+6. A small in-process orchestrator: sequential and parallel execution, dependencies, bounded resources, explicit failure handling.
+7. Runs, messages, steps, and audit events persisted in PostgreSQL.
+8. A versioned API and event stream first; human interfaces later.
+9. A separate execution broker and sandbox before any powerful filesystem, shell, browser, or code tool.
+10. Deterministic tests, agent evaluations, observability, and operational docs developed alongside the runtime.
+11. Temporal evaluated only when long-running, recoverable workflows need it.
+12. Low running cost: the existing machine and open-source infrastructure.
+13. Learn each concept through primary sources, experiments, and small, reviewable changes.
 
-1. Build a custom, provider-independent agent execution loop.
-2. Establish a common contract for model invocations and model profiles.
-3. Support local inference through Ollama as the initial baseline.
-4. Design for tiered model roles (primary, fast, summarizer, specialist, evaluator) without requiring multiple models in the first vertical slice.
-5. Provide a tool registry and dispatcher that support native tools and MCP servers through a common policy boundary.
-6. Build a small in-process orchestration engine with sequential execution, concurrency, dependencies, bounded resource use, and explicit failure handling.
-7. Persist application state, runs, messages, execution steps, and audit-relevant events in PostgreSQL, after evaluating version compatibility.
-8. Expose an API/SDK-first interface with a versioned event stream. Human-facing interfaces are later clients.
-9. Provide a separate execution broker and isolation boundary before enabling powerful filesystem, shell, browser, or arbitrary-code tools.
-10. Develop deterministic tests, agent evaluations, observability, and operational documentation alongside the runtime.
-11. Evaluate Temporal when long-running workflows, durable timers, worker recovery, and workflow signaling justify it.
-12. Keep development self-hosted and low-cost, using the existing development machine and open-source infrastructure where practical.
-13. Teach the engineering concepts through primary sources, textbooks, experiments, and small, reviewable implementation changes.
+## Non-goals for the first release
 
-## 3. Non-goals for the initial release
+- Hosted multi-tenant SaaS.
+- A full web dashboard, IDE extension, or polished terminal UI.
+- A microservice per module.
+- A custom inference engine or model training.
+- Building our own database, message broker, workflow engine, container runtime, or telemetry protocol.
+- Redis, Kafka, Kubernetes, a vector database, or a graph database without a demonstrated need.
+- Multi-agent behaviour as a prerequisite for usefulness.
+- Model output authorising its own actions.
+- Treating containers alone as safe for arbitrary code.
 
-- A hosted multi-tenant SaaS service.
-- A complete web dashboard, IDE extension, or polished terminal UI.
-- A microservice for every logical module.
-- A custom LLM inference engine or model training platform.
-- Building a new database, message broker, workflow engine, container runtime, or telemetry protocol.
-- Introducing Redis, Kafka, Kubernetes, a vector database, or a graph database without a demonstrated requirement.
-- Treating multi-agent behavior as a prerequisite for a useful first release.
-- Allowing model-generated instructions to authorize their own actions.
-- Claiming that containers alone make arbitrary code execution safe.
-
-## 4. User-approved project direction
+## Owner-approved direction
 
 | Area | Direction | Status |
 |---|---|---|
-| Product | General-purpose agent platform | Agreed |
-| Deployment | Local/self-hosted, minimal ongoing cost | Agreed |
-| Interface | API and SDK first; interfaces later | Agreed |
-| Runtime language | Python primary | Accepted direction |
-| Additional languages | TypeScript for Node-native/client surfaces; Go/Rust when justified | Accepted direction |
-| Inference | Ollama first | Agreed direction |
-| Model strategy | Tiered profiles, initially may use one model | Agreed direction |
-| Tools | Native and MCP | Agreed direction |
-| Orchestration | Custom in-process engine first | Agreed direction |
-| Durable workflows | Evaluate Temporal later | Agreed direction |
-| Database | PostgreSQL; compare 18.7 and 19.0 | Agreed direction; version open |
-| Execution | Full capabilities are a long-term requirement behind a security boundary | Agreed scope; sandbox open |
+| Product | General-purpose agent platform | Accepted |
+| Deployment | Local, self-hosted, minimal running cost | Accepted |
+| Interface | API and SDK first | Accepted |
+| Runtime language | Python | Accepted |
+| Other languages | TypeScript for Node-native and client work; Go/Rust when justified | Accepted |
+| Inference | Ollama first | Accepted |
+| Models | Tiered profiles; one model may back all of them initially | Accepted |
+| Tools | Native and MCP | Accepted |
+| Orchestration | Custom in-process engine first | Accepted |
+| Durable workflows | Evaluate Temporal later | Accepted |
+| Database | PostgreSQL | Accepted; major version open |
+| Execution | Full capabilities long-term, behind a security boundary | Accepted; sandbox open |
 
-## 5. Quality objectives
+## Use cases
 
-The platform should be engineered around:
+1. **Single answer.** A client submits a task; the model answers.
+2. **Tool-assisted task.** The model requests a tool; the runtime validates and authorises it; the dispatcher runs it; the model continues with the result.
+3. **Multi-step workflow.** The agent proposes several tasks; the orchestrator validates dependencies and limits and runs ready work.
+4. **Approval-gated action.** Policy requires a human decision; the run pauses until approval or denial.
+5. **Long-running task.** Stays observable and cancellable; durable execution only once there is a need.
+6. **Local execution.** Filesystem, shell, browser, or code operations through the broker under a chosen isolation profile.
+7. **Evaluation.** A harness runs fixed or model-backed cases and records outcomes and metrics.
 
-- **Correctness:** explicit state transitions, schema validation, defined failure semantics, deterministic core tests.
-- **Reliability:** bounded retries, cancellation, idempotency, recoverable state, controlled concurrency.
-- **Security:** least privilege, deny-by-default policies, separation of model decisions from authorization, isolated execution, auditable approvals.
-- **Observability:** correlated run histories, traces, metrics, and structured logs with sensitive-data controls.
-- **Evaluability:** repeatable datasets, regression tests, model comparisons, and clearly defined success metrics.
-- **Maintainability:** explicit module boundaries, typed contracts, migrations, ADRs, and dependency discipline.
-- **Resource efficiency:** local-first operation, measurable CPU/RAM/VRAM/disk usage, and optional infrastructure profiles.
+No primary use case is chosen yet. The owner is prioritising breadth of learning and will pick a focus later. Until then, evaluation cases cover general tool-use behaviour rather than one domain.
 
-Numeric SLOs, concurrency targets, supported operating systems, and resource ceilings are intentionally open until the host environment and intended workload have been characterized.
+## Quality attributes
 
-## 6. Definition of success
+| Attribute | How it is verified |
+|---|---|
+| Correctness | State-machine invariants, schema rejection, tool-call handling tests |
+| Reliability | Retry, idempotency, cancellation, and recovery tests |
+| Security | Threat-model coverage, privilege boundaries, sandbox negative tests, audit completeness |
+| Performance | Model, tool, and end-to-end latency; queue wait; CPU, RAM, and VRAM |
+| Operability | A run can be reconstructed from stored records; backup and restore have been exercised |
+| Cost | Hardware use; any remote API spend |
+| Maintainability | Typed interfaces, migrations, ADRs, tests on critical paths |
 
-A successful initial platform is not defined by the presence of all planned features. It must demonstrate at least one end-to-end use case in which:
+There are no numeric targets yet. They get set after measuring real hardware and workload, not before.
+
+## Definition of success
+
+The first milestone is one end-to-end path in which:
 
 - a run is created through the API;
-- a configured model receives a bounded context;
-- the model can request a registered tool;
-- the tool request is validated and authorized outside the model;
-- the tool executes through the dispatcher and returns a structured result;
-- the model continues or returns a final response;
-- the run and relevant events are persisted;
-- the execution can be inspected and tested deterministically;
-- failures, limits, and cancellation behave according to documented semantics.
+- a model receives a bounded context and requests a registered tool;
+- the request is validated and authorised outside the model;
+- the tool runs through the dispatcher and returns a structured result;
+- the model continues or finishes;
+- the run and its events are persisted;
+- the whole path is testable deterministically, and failures, limits, and cancellation behave as documented.
 
-Powerful local execution, multi-agent delegation, and durable workflow execution require their own security and reliability gates before being called production-ready.
+Powerful execution, delegation, and durable workflows each need their own security and reliability gates before anyone calls them production-ready.
 
-## 7. Constraints and assumptions
+## Constraints
 
-- Initial development uses the owner's existing machine; its OS, kernel, CPU, RAM, GPU/VRAM, and container capabilities must be discovered before pinning runtime and sandbox choices.
-- Local inference is the baseline; remote providers may be optional adapters, not required infrastructure.
-- Minimal recurring cost is preferred over hosted dependencies.
-- Current versions and compatibility must be rechecked at implementation time.
-- A “production-grade” claim is always scoped to a concrete threat model, workload, deployment model, SLO, operational owner, and validated release process.
+- Development runs on the owner's laptop. See [the environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md).
+- Local inference is the baseline. Remote providers are optional adapters and never required.
+- Single user for now. Multi-user or tenant isolation is out of scope until there is a real need.
+- "Production-grade" always means for a stated threat model, workload, and deployment. It is never a blanket claim.
+
+## Open assumptions
+
+- Expected concurrent runs and run durations.
+- Offline operation versus network-dependent tools.
+- Browser automation: isolated profile (the default) versus a real user session.
+- Retention and cleanup of workspaces, artifacts, and run history.
+- Default network egress for code and shell tools (the expected answer is deny).
+- Whether the API is ever exposed beyond localhost.

@@ -1,23 +1,23 @@
-# ADR 0001: API/SDK-First Product Boundary
+# ADR 0001: API and SDK as the Product Boundary
 
-- **Status:** Accepted direction
+- **Status:** Accepted
 - **Date:** 2026-11-25
 
 ## Context
 
-The platform may later be used through a CLI, web inspector, IDE extension, CI job, or automation client. Building each surface first risks duplicating orchestration, permission, and state logic in user interfaces.
+The platform may eventually be driven from a CLI, web inspector, IDE, CI job, or other automation. Building those surfaces first would scatter orchestration, permission, and state logic across clients.
 
 ## Decision
 
-Treat a versioned API and event protocol as the primary client boundary. Human-facing interfaces are clients of this boundary. Build a minimal SDK/reference client only when needed to validate the API end-to-end. No full UI is required for the first runtime vertical slice.
+A versioned API and event protocol is the only client boundary. Every human-facing interface is a client of it. A minimal SDK or reference client gets built only when it is needed to exercise the API end to end. No UI is needed for the first vertical slice.
 
 ## Consequences
 
-- API commands, queries, event schemas, and idempotency must be designed deliberately.
-- Clients do not contain agent-loop or authorization logic.
-- SSE is the initial event-stream candidate; reconnect/replay behavior must be specified.
+- Commands, queries, event schemas, and idempotency need deliberate design.
+- Clients contain no agent-loop or authorisation logic.
+- SSE is the initial event transport, and its reconnect and replay behaviour must be specified.
 - A UI can be added later without changing runtime semantics.
 
 ## Revisit when
 
-A concrete interaction requirement needs a different transport or a minimal visual inspector materially improves debugging.
+An interaction needs a different transport, or a minimal visual inspector would materially speed up debugging.

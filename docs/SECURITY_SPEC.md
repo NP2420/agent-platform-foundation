@@ -1,115 +1,102 @@
-# Security and Execution Isolation Specification
+# Security and Execution Isolation
 
-**Status:** Security boundary is an agreed requirement. Exact host-specific sandbox implementation is open and must be researched before enabling arbitrary execution.
+**Status:** The security boundary is an accepted requirement. The host-specific sandbox is open and must be selected and tested before any arbitrary execution is enabled.
 
-## 1. Security objective
+## Stance
 
-Treat the model as an untrusted decision-making component that can be manipulated by user content, retrieved documents, web pages, tool outputs, MCP servers, memory, or prior conversation. The model may propose an action; only trusted application code can authorize it. Powerful actions execute outside the API/runtime privilege boundary.
+The model is an untrusted component that can be steered by user input, retrieved documents, web pages, tool output, MCP servers, memory, or earlier conversation. It may propose actions; only trusted code authorises them. Powerful actions run outside the API and runtime privilege boundary.
 
-A security claim must be scoped to a threat model, host OS, kernel, container/runtime configuration, attacker capability, and supported deployment mode.
+Every security claim is scoped to a threat model, host, kernel, runtime configuration, and attacker capability.
 
-## 2. Assets
+## Assets
 
-- User files, source repositories, SSH keys, cloud/API credentials, browser sessions, and environment variables.
-- Conversation history, memory, model prompts, private documents, and artifacts.
-- Model-serving endpoints and provider credentials.
-- Database records, run history, approvals, and audit events.
-- Host OS, processes, network, and other local users' data.
-- Tool/MCP server credentials and external resources.
+- User files, repositories, SSH keys, cloud and API credentials, browser sessions, environment variables.
+- Conversation history, memory, prompts, private documents, artifacts.
+- Model endpoints and provider credentials.
+- Database records, run history, approvals, audit events.
+- The host itself: processes, network, other users' data.
+- Credentials held by tools and MCP servers.
 
-## 3. Threats to model
+## Threats
 
-Use OWASP Top 10 for Agentic Applications (2026) as one taxonomy, including goal hijack, tool misuse, identity/privilege abuse, supply-chain risks, unexpected code execution, memory poisoning, inter-agent communication abuse, cascading failures, false trust, and rogue agents. It supplements rather than replaces a project-specific threat model.
+OWASP's Top 10 for Agentic Applications (2026) is a useful checklist (goal hijack, tool misuse, privilege abuse, supply chain, unexpected code execution, memory poisoning, inter-agent abuse, cascading failure, false trust, rogue agents), alongside a project-specific model:
 
-Concrete threats:
+- Prompt injection through user input, retrieved text, web pages, or tool output.
+- Tool-call spoofing, schema abuse, confused deputy, privilege escalation.
+- Secret exfiltration through prompts, logs, artifacts, network, or subprocesses.
+- A malicious MCP server or a compromised dependency.
+- Path traversal, symlink escape, unsafe archive extraction.
+- Shell and code abuse: fork bombs, resource exhaustion, network scanning, lateral movement.
+- Data leaking across runs.
+- Duplicate side effects after a timeout or recovery.
+- Router fallback sending private data to a remote provider.
+- Actions taken with a user's ambient browser identity.
 
-- Prompt injection in user input, retrieved text, websites, or tool output.
-- Tool-call spoofing, schema abuse, confused deputy, or privilege escalation.
-- Secret exfiltration through prompts, logs, artifacts, network access, or subprocesses.
-- Malicious MCP server or compromised dependency.
-- Path traversal, symlink escape, workspace escape, and unsafe archive extraction.
-- Shell/code execution abuse, fork bombs, resource exhaustion, network scanning, and lateral movement.
-- Cross-run or cross-user data leakage.
-- Replayed/duplicate side effects after timeout/recovery.
-- Model/router fallback sending private data to an unintended remote provider.
-- Browser profile/session theft or actions performed with a user's ambient identity.
+## Trust boundaries
 
-## 4. Trust boundaries
+1. **Client → API:** authenticate, validate, enforce size and rate limits.
+2. **Model → runtime:** output is a proposal, never an instruction or an authorisation.
+3. **Tool or MCP → runtime:** metadata and results are untrusted. Validate, bound, label, keep provenance.
+4. **Runtime → broker:** only structured, policy-approved requests.
+5. **Broker → worker:** restricted identity, explicit filesystem, network, and resource grants.
+6. **App → database and secrets:** narrowly scoped credentials.
+7. **Local → remote provider:** explicit data classification and configuration before anything leaves the machine.
 
-1. **Client → API:** authenticate requests, validate inputs, enforce size/rate quotas.
-2. **Model → runtime:** model outputs are proposals, not trusted instructions or authorization.
-3. **Tool/MCP → runtime:** metadata/results are untrusted; validate, bound, sanitize, and preserve provenance.
-4. **Runtime → execution broker:** structured, policy-approved requests only.
-5. **Broker → sandbox worker:** restricted identity and explicit filesystem/network/resource permissions.
-6. **Application → database/secrets:** narrowly scoped credentials and transactional repository access.
-7. **Local host → any remote provider:** explicit data classification and consent/configuration before remote transmission.
+## Controls
 
-## 5. Required controls
+**Authorisation**
+- Deny-by-default tool grants and least-privilege capability sets per agent, run, and tool.
+- Authorisation comes from policy code, never from model output.
+- User, run, worker, and service identities are separate.
+- Approvals bind to the exact action, arguments, target, caller, scope, and expiry.
 
-### Identity and authorization
+**Execution broker**
+- No model-generated code or shell in the API process.
+- Structured requests only; never a "run anything" grant.
+- A dedicated unprivileged identity and an isolated workspace per invocation.
+- Never mount the home directory, SSH agent, credential stores, Docker socket, or host root.
+- Limits on filesystem, processes and PIDs, CPU, memory, file size, wall time, and network.
+- No network egress by default for arbitrary code.
+- Explicit, audited cleanup and artifact export.
+- Cancellation is best effort; unknown outcomes are recorded.
 
-- Deny-by-default tool grants.
-- Least-privilege capability sets at agent/run/tool level.
-- Authorization performed by trusted policy code, not inferred from model output.
-- Separate user identity, run identity, worker identity, and external service credentials.
-- Approval is bound to exact action/arguments/target, caller, scope, and expiry.
+**Data and secrets**
+- Secrets stay out of prompts and context unless a scoped tool needs them.
+- Prefer short-lived scoped credentials over inherited environment secrets.
+- Redact tokens and personal data from logs and traces. Never log cookies, auth headers, or private file contents by default.
 
-### Execution broker
+**Network**
+- API, PostgreSQL, Ollama, and telemetry bind to loopback by default.
+- Any non-loopback exposure needs authentication.
+- Defend against SSRF and DNS rebinding; validate destinations for tools that make requests.
+- Sandbox workers cannot reach host services or metadata endpoints.
 
-- Do not execute model-generated shell/code in the API process.
-- Broker accepts a structured request, not an arbitrary free-form “run anything” grant.
-- Use a dedicated unprivileged identity and isolated workspace.
-- Do not mount the user's full home directory, SSH agent, credential store, Docker socket, or host root into a worker.
-- Apply filesystem, process, CPU, memory, PID, file-size, wall-time, and network controls.
-- Default to no network egress for arbitrary code unless explicitly needed and approved.
-- Ensure workspace cleanup and artifact export are explicit and audited.
-- Treat cancellation and worker termination as best-effort for external side effects; record unknown outcomes.
+**Supply chain**
+- Lock dependencies and watch advisories.
+- Use official SDKs; don't adopt unreviewed MCP servers or tool packages.
+- Keep secrets, model weights, and artifacts out of Git. Consider an SBOM for releases.
 
-### Data and secrets
+## Sandbox
 
-- Keep secrets out of system prompts and ordinary context unless a narrowly scoped tool requires them.
-- Prefer credential broker/short-lived scoped credentials over environment-wide secret inheritance.
-- Redact tokens, personal data, and sensitive prompt/tool payload fields from logs/traces.
-- Do not log raw browser cookies, authorization headers, or private file contents by default.
-- Use explicit data policy for optional remote model providers.
+Candidates and trade-offs are in [research/LOCAL_SANDBOX_OPTIONS.md](research/LOCAL_SANDBOX_OPTIONS.md). A rootless container reduces some risk but proves nothing against hostile code. Selection requires a configuration review and negative tests on the actual host.
 
-### Network and local services
+## Human approval
 
-- Bind API, PostgreSQL, Ollama, and telemetry endpoints to loopback/private interfaces by default.
-- Authenticate any non-loopback API exposure.
-- Protect local services from DNS rebinding/SSRF and validate destinations where tools make requests.
-- Restrict access to internal metadata endpoints and host services from sandbox workers.
+Policy defines which actions need approval. The UI is not the boundary: the decision is persisted and enforced at execution time. Changing the arguments, target, or scope invalidates an approval. Denial, expiry, and cancellation have defined semantics.
 
-### Dependencies and supply chain
+## Security tests
 
-- Pin and lock dependencies, review security advisories, and minimize permissions.
-- Verify official SDKs/protocol revisions; avoid copying unreviewed MCP servers or arbitrary tool packages.
-- Keep secrets/model weights/runtime artifacts out of source control.
-- Record dependency versions and consider an SBOM for release artifacts.
+- Prompt injection in tool output, retrieved documents, web content, and subagent responses.
+- Unauthorised tool, argument, and target combinations.
+- Approval replay; arguments changed after approval.
+- Path traversal, symlink races, archive traversal.
+- Network egress and metadata endpoint access.
+- Resource exhaustion and process spawning.
+- Access to another run's data or artifacts.
+- Secret leakage through context, results, errors, logs, and traces.
+- Malicious or misbehaving MCP servers.
+- Duplicate and ambiguous side effects.
 
-## 6. Sandbox options to evaluate
+## Gate for powerful execution
 
-See `research/LOCAL_SANDBOX_OPTIONS.md`. Candidate layers include Linux namespaces, seccomp, AppArmor/SELinux, Landlock, rootless OCI containers, gVisor, and Firecracker microVMs. These are not interchangeable; they differ in compatibility, host requirements, isolation boundary, operational complexity, and resource overhead. On Windows/macOS, suitable VM/container backends and host filesystem semantics must be examined separately.
-
-A rootless container reduces some risks but is not proof of isolation against hostile code. A sandbox selection requires configuration review and negative tests on the actual target host.
-
-## 7. Human approval
-
-Approval should be required by policy for defined classes of sensitive actions. The UI is not the security boundary; the approval decision must be persisted and enforced at execution time. Any change to approved arguments/target/scope invalidates the approval. Provide denial, expiry, and cancellation semantics.
-
-## 8. Security testing
-
-- Prompt injection in tool outputs, retrieved documents, web content, and delegated-agent responses.
-- Unauthorized tool/argument/target combinations.
-- Approval replay or argument mutation after approval.
-- Path traversal, symlink race, archive traversal, workspace boundary tests.
-- Network egress and local metadata access tests.
-- Resource exhaustion and process spawning limits.
-- Cross-run data and artifact access.
-- Secret leakage through model context, tool result, errors, logs, and traces.
-- Malicious or misbehaving MCP server tests.
-- Duplicate and ambiguous external side-effect execution.
-
-## 9. Go-live gate
-
-Powerful local execution remains disabled until the selected host/sandbox has a documented threat model, default policy, configuration review, positive and negative tests, cleanup/audit behavior, and explicit residual-risk statement. A developer convenience mode must be visibly separate from a restricted mode; never label an unrestricted mode “sandboxed.”
+Stays disabled until the selected host and sandbox have a documented threat model, a default policy, a configuration review, passing positive and negative tests, cleanup and audit behaviour, and a residual-risk statement. A developer convenience mode, if one exists, is visibly separate and is never called "sandboxed".

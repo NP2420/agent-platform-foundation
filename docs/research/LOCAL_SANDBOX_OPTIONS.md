@@ -1,80 +1,58 @@
-# Research Note: Local Execution Isolation Options
+# Research Note: Execution Sandbox Options
 
-**Decision:** Open. No arbitrary shell/code execution should be enabled until the host and threat model are known and the selected configuration passes negative tests.
+**Decision:** Open; decided in Phase 10. No shell or code execution until then.
 
-## 1. Problem
+## Problem
 
-The platform eventually needs filesystem, shell, browser, and arbitrary-code capabilities. These are significantly more powerful than ordinary API tools. Model instructions and tool inputs are untrusted, so executing them inside the API process or with the user's ambient privileges is unacceptable for a restricted/production mode.
+Filesystem, shell, browser, and code tools are far more powerful than ordinary API tools, and their inputs come from an untrusted model. They need a separate broker that validates structured requests and launches restricted workers, never raw model text piped into a shell.
 
-The design needs a separate execution broker and worker boundary. The broker validates a structured operation, selects a workspace and security profile, and launches the worker. It should not simply pass raw model text to an unrestricted shell.
+## Mechanisms
 
-## 2. Candidate mechanisms
-
-| Mechanism | What it contributes | Limits/considerations |
+| Mechanism | Provides | Limits |
 |---|---|---|
-| Linux namespaces | Isolate process, mount, PID, IPC, user, and network views | Configuration complexity; host kernel; not a complete security model alone |
-| seccomp | Restrict system calls available to a process | Requires careful profiles; does not isolate filesystem/network by itself |
-| AppArmor/SELinux | Mandatory access-control policy for process resources | Host policy/configuration and operational expertise required |
-| Landlock | Unprivileged filesystem (and supported network) access restriction | Kernel/version support and ABI feature checks; complementary layer |
-| Rootless OCI containers | Run container engine/workloads without a root daemon | Reduces some privilege risk; container configuration and kernel boundary still matter |
-| gVisor | User-space application kernel that mediates system calls | Compatibility/performance overhead; host/platform requirements |
-| Firecracker microVM | Lightweight VM boundary using KVM virtualization | Linux/KVM and operational complexity; resource overhead and image lifecycle |
-| Platform-native VM/sandbox | Host-appropriate isolation on Windows/macOS | Need a separate platform-specific design and tested guarantees |
+| Linux namespaces | Isolated views of processes, mounts, PIDs, IPC, users, network | Complex to configure; not a full security model alone |
+| seccomp | Syscall filtering | Profiles take care; doesn't isolate files or network |
+| AppArmor / SELinux | Mandatory access control | Host policy and expertise required |
+| Landlock | Unprivileged filesystem (and some network) restriction | Depends on kernel ABI; a complementary layer |
+| Rootless OCI containers | Containers without a root daemon | Still shares the kernel; configuration matters |
+| gVisor | User-space kernel intercepting syscalls | Compatibility and performance overhead |
+| Firecracker microVM | VM boundary via KVM | Needs KVM; image lifecycle; overhead |
+| Platform-native VM | Host-appropriate isolation on Windows or macOS | A separate design per platform |
 
-Primary references:
-- Linux Landlock: https://www.kernel.org/doc/html/latest/userspace-api/landlock.html
-- Docker rootless: https://docs.docker.com/engine/security/rootless/
-- gVisor: https://gvisor.dev/docs/
-- Firecracker: https://firecracker-microvm.github.io/ and https://github.com/firecracker-microvm/firecracker
+These layers combine. A hardened worker might use namespaces, seccomp, Landlock, and cgroups inside a container or VM.
 
-These mechanisms are not mutually exclusive. A hardened worker may combine namespaces, seccomp, MAC, Landlock, cgroups/resource controls, and a container/VM boundary.
+On this host, WSL2 has user namespaces and cgroup v2. `/dev/kvm` exists but the user can't access it yet ([environment baseline](ENVIRONMENT_BASELINE_2026-11-25.md)).
 
-## 3. Design requirements for the broker
+## Broker requirements
 
-- Separate process and identity from API/runtime.
-- Explicit workspace root and artifact import/export paths.
-- No ambient home-directory, SSH-agent, Docker socket, cloud credentials, or browser profile mounts.
-- Non-root worker identity.
-- Restricted filesystem by default; read/write grants are explicit.
-- Network egress denied by default for arbitrary code; permit only scoped destinations where a task requires it.
-- CPU, memory, process/PID, file size, wall-time, output size, and disk quotas.
-- Per-invocation correlation and audit records.
-- Cleanup on success, failure, cancellation, and worker crash.
-- Safe path normalization and symlink/archive traversal defenses.
-- Structured operation API; do not treat a model-provided command string as trusted policy.
-- Explicit behavior for ambiguous side effects and timeout.
+- A separate process and non-root identity from the runtime.
+- An explicit workspace root and import/export paths.
+- No home directory, SSH agent, Docker socket, cloud credentials, or browser profile mounted.
+- Filesystem restricted by default, with explicit grants.
+- No network egress by default; scoped destinations only when a task needs them.
+- Quotas on CPU, memory, PIDs, file size, wall time, output, and disk.
+- Per-invocation audit records.
+- Cleanup on success, failure, cancellation, and crash.
+- Defences against path normalisation, symlink, and archive traversal attacks.
+- Defined behaviour for timeouts and ambiguous side effects.
 
-## 4. Host discovery gate
+## Negative tests (all must be blocked)
 
-Before implementation, record locally:
+- Reading outside the workspace, directly or through symlinks and archives.
+- Inspecting host processes or sensitive mounts.
+- Reading environment variables or secrets that weren't granted.
+- Reaching localhost services, metadata endpoints, the internet, or LAN hosts.
+- Fork bombs and memory, CPU, or disk exhaustion; running past the deadline.
+- Writing outside allowed paths.
+- Leaving files or processes behind after cleanup.
+- Racing cancellation or timeout.
 
-- OS edition/distribution and version;
-- kernel version and active virtualization support;
-- whether Docker/Podman is available and whether rootless mode works;
-- Windows WSL2 configuration if applicable;
-- CPU architecture, cores, RAM, GPU/VRAM;
-- cgroup version and delegated resource-control availability where applicable;
-- ability to create user/network/mount namespaces;
-- storage/filesystem behavior and workspace location.
+Run these on the selected host and record what is still exposed. Never test malicious payloads outside the isolated boundary.
 
-Do not publish sensitive machine identifiers in the repository.
+## Decision rule
 
-## 5. Required negative tests
+Pick the least complex mechanism that meets the threat model. For genuinely untrusted code, a shared kernel may be unacceptable; consider gVisor or a VM. If this host can't support the required model, narrow the feature or run workers on another machine, and don't weaken the security claim.
 
-A sandbox is not accepted merely because a process launches. Test attempts to:
+## References
 
-- read outside assigned workspace;
-- follow symlink or archive paths outside workspace;
-- inspect host process details and sensitive mounts;
-- access environment variables/secrets not granted;
-- reach localhost services, metadata endpoints, arbitrary internet destinations, or other LAN hosts;
-- create excessive processes/threads, consume memory/CPU/disk, or run past deadline;
-- write outside allowed paths;
-- retain files/processes after cleanup;
-- exploit cancellation/timeout races.
-
-Tests must run on the selected host and record residual limitations. Do not use a malicious payload against a machine/user environment outside the isolated test boundary.
-
-## 6. Decision gate
-
-Select the least-complex mechanism that meets the documented threat model. For untrusted arbitrary code, consider stronger isolation such as gVisor or a VM boundary if container/kernel sharing is outside acceptable risk. If current host OS cannot support the intended threat model, constrain the feature or run the execution worker on a separate host; do not quietly weaken the security claim.
+[Landlock](https://www.kernel.org/doc/html/latest/userspace-api/landlock.html) · [Docker rootless](https://docs.docker.com/engine/security/rootless/) · [gVisor](https://gvisor.dev/docs/) · [Firecracker](https://firecracker-microvm.github.io/)

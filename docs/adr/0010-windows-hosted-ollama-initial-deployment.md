@@ -1,43 +1,34 @@
-# ADR 0010: Windows-Hosted Ollama for Initial Local Inference
+# ADR 0010: Windows-Hosted Ollama via WSL Mirrored Networking
 
-- **Status:** Accepted for the initial development environment; deployment remains replaceable
+- **Status:** Accepted for the development environment
 - **Date:** 2026-11-25
 
 ## Context
 
-The primary development environment is Ubuntu 26.04.1 under WSL2 on a Windows 11 Home host. The host has an NVIDIA RTX 4050 Laptop GPU with 6,141 MiB reported VRAM and 15.68 GiB physical RAM. Ollama `0.40.18` is already installed on Windows, with approximately 27.05 GB of model storage under the configured `OLLAMA_MODELS` directory. WSL has a 7.6 GiB memory limit in the captured environment. A Windows-hosted inference server therefore avoids duplicating weights in the WSL virtual disk and avoids placing the inference server's process memory inside the WSL VM allocation.
+Development happens in Ubuntu 26.04.1 under WSL2 on Windows 11 Home, with an RTX 4050 Laptop GPU (6,141 MiB) and 15.68 GiB RAM. Ollama 0.40.18 was already installed on Windows with about 27 GB of models. WSL is capped at 7.6 GiB of RAM, so running Ollama inside WSL would duplicate the weights and eat that allocation.
 
-Initially, Ollama listened only on Windows `127.0.0.1:11434`. WSL NAT mode could not connect through either its own localhost or the Windows host IP because the service was bound to Windows loopback. After setting `networkingMode=mirrored` under `[wsl2]` in `%USERPROFILE%\.wslconfig`, shutting WSL down, and restarting Ubuntu, `curl http://127.0.0.1:11434/api/version` succeeded from WSL.
+Ollama listened only on Windows `127.0.0.1:11434`. In WSL's default NAT mode, neither WSL's localhost nor the Windows host IP could reach it. After setting `networkingMode=mirrored` under `[wsl2]` in `%USERPROFILE%\.wslconfig` and restarting WSL, `curl http://127.0.0.1:11434/api/version` succeeded from Ubuntu.
 
 ## Decision
 
-Use Windows-hosted Ollama as the initial local inference server. The Python runtime in Ubuntu/WSL2 will connect to `http://127.0.0.1:11434` through mirrored networking. Keep the Ollama listener on loopback; do not expose it on `0.0.0.0` or enable unauthenticated remote access as a workaround.
+Use Windows-hosted Ollama. The Python runtime in WSL connects to `http://127.0.0.1:11434` over mirrored networking. Ollama stays bound to loopback: no `0.0.0.0`, no firewall openings.
 
-The endpoint must be configurable (for example, `OLLAMA_BASE_URL`) so Linux-hosted Ollama, a dedicated inference host, llama.cpp, vLLM, or another provider can be evaluated later without changing the agent-runtime contract.
+The endpoint is configuration (`OLLAMA_BASE_URL`), so Ollama in Linux, a dedicated host, llama.cpp, vLLM, or another provider can be swapped in without changing the runtime contract.
 
-## Alternatives considered
+## Alternatives
 
-1. **Ollama inside WSL2:** cleaner Linux-local service and localhost topology, but would duplicate model storage and consume the WSL VM's memory allocation. Reconsider if Linux-native deployment or container co-location becomes more important.
-2. **Windows Ollama with NAT host-IP access:** would require a Windows listener address and firewall configuration that exposes a wider interface. Rejected for the initial setup because mirrored localhost access worked without widening the listener.
-3. **Containerized inference:** potentially useful for a reproducible Linux deployment, but introduces GPU passthrough, image/runtime, storage, and resource questions that are not needed for the first local baseline.
+1. **Ollama inside WSL.** A cleaner Linux topology, but duplicate storage and WSL memory pressure. Reconsider for Linux-native or containerised deployment.
+2. **Windows Ollama via NAT and the host IP.** Requires widening the listener and opening the firewall. Rejected because mirrored mode works without either.
+3. **Containerised inference.** GPU passthrough, image, and storage questions that aren't needed yet.
 
 ## Consequences
 
-- WSL mirrored networking becomes part of the local development environment configuration.
-- The inference service remains a Windows-hosted dependency; the agent runtime should implement health checks, connection errors, and configurable endpoint behavior.
-- The project is not yet proven portable to a Linux-only deployment; that will require a separate deployment profile and test.
-- Model weights remain in the Windows-configured Ollama directory and should not be copied into Git or Docker build contexts.
-- This decision does not imply that Windows-hosted Ollama is the production deployment choice.
-
-## Evidence
-
-- WSL-to-Windows API version request succeeded at `http://127.0.0.1:11434/api/version` after mirrored networking was enabled.
-- Ollama reported version `0.40.18` and a loopback listener on port `11434`.
-- See `docs/research/ENVIRONMENT_BASELINE_2026-11-25.md` and `docs/research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md`.
+- Mirrored networking becomes part of the documented development setup.
+- The runtime needs health checks and clear connection errors, because inference is an external dependency.
+- Portability to a Linux-only host is unproven and needs its own deployment profile and test.
+- Model weights stay in the Windows Ollama directory, out of Git and Docker build contexts.
+- This is not a production deployment decision.
 
 ## Revisit when
 
-- The platform is moved to a Linux-only host or server.
-- The inference service is containerized or distributed independently.
-- Mirrored networking becomes unreliable or conflicts with required VPN/network policy.
-- Windows memory/GPU scheduling, security posture, or operational overhead becomes a measured bottleneck.
+The platform moves to a Linux host or server; inference is containerised or moved to another machine; mirrored networking conflicts with VPN or network policy; or Windows GPU or memory scheduling becomes a measured bottleneck.

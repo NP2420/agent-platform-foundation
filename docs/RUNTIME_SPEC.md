@@ -1,122 +1,147 @@
-# Agent Runtime Specification
+# Runtime and Orchestration
 
-**Status:** Proposed behavioral contract. Internal types and exact serialization are to be designed in Phase 2.
+**Status:** Proposed. Internal types and serialisation are designed in Phase 2. The scheduler and plan schema are finalised in Phase 6.
 
-## 1. Responsibility
+## Runtime responsibility
 
-The runtime executes one bounded agent run. It coordinates context construction, model invocation, model response normalization, tool-request validation and policy, tool execution, state updates, and completion. It does not itself grant permissions, run arbitrary code, or decide unbounded resource allocation.
+The runtime executes one bounded run. It builds context, calls the model, normalises the response, validates and authorises tool requests, dispatches them, updates state, and decides when the run is done. It does not grant permissions, run arbitrary code, or allocate unbounded resources.
 
-## 2. Inputs
+## Run inputs
 
-A run request should reference:
+- run ID and owning thread;
+- agent configuration version (persisted with the run, so later edits never change a run already in progress);
+- user input or trigger payload;
+- caller identity;
+- budget and deadline;
+- allowed tool set;
+- model profile or routing policy;
+- correlation and idempotency IDs.
 
-- A stable run identifier and owning thread/conversation.
-- A versioned agent definition/configuration.
-- User input (or an explicitly defined trigger payload).
-- The caller/tenant/security principal.
-- An execution budget and deadline.
-- An allowed tool capability set.
-- A model-routing policy/profile.
-- Optional correlation/idempotency identifiers.
-
-Persist the configuration version used by a run. Changes to an agent definition must not silently mutate an already-running execution.
-
-## 3. Normalized model interaction
-
-A provider adapter accepts an internal request containing selected model profile, system/developer instructions, messages, tool definitions, output constraints, and request budget. It returns a normalized response with:
-
-- message content blocks (text and supported structured/multimodal content);
-- zero or more tool-call proposals;
-- finish/stop reason;
-- normalized token/resource usage where available;
-- provider/model/request metadata;
-- structured error information when invocation fails.
-
-Provider-native metadata may be retained in a bounded opaque field. Do not assume all providers support all features or silently discard material differences.
-
-## 4. Bounded interaction loop
-
-Conceptual behavior:
+## The loop
 
 ```text
 while run is RUNNING and budget remains:
-    context = context_manager.build(run, budget)
-    profile = model_router.select(task, context, policy)
-    response = model_gateway.generate(profile, context)
-    persist model request/result metadata
+    context  = context_manager.build(run, budget)
+    profile  = router.select(task, context, policy)
+    response = gateway.generate(profile, context)
+    record model call metadata
 
     if response is final:
-        validate output policy
-        persist assistant message and completion event
-        complete run
+        check output policy, persist message, complete run
 
-    if response requests tools:
-        validate each tool name and schema
-        ask policy engine: allow, deny, or require approval
-        if approval required:
-            persist approval request; pause run
-        else:
-            dispatch permitted tools under scheduler/resource limits
-            persist outcomes and append tool results to context history
-        continue
+    elif response has tool calls:
+        for each call: validate name and arguments, ask policy
+        if any call needs approval: persist request, pause run
+        else: dispatch allowed calls under scheduler limits,
+              persist outcomes, append results to history
 
-    handle refusal, provider error, malformed response, or handoff explicitly
+    else: handle refusal, provider error, or malformed response explicitly
 
-if budget/deadline exhausted:
-    terminate with a defined budget-exhausted outcome
+on budget or deadline exhaustion: end with a budget-exhausted outcome
 ```
 
-The pseudo-code is explanatory; exact ordering and transactional boundaries are designed with the implementation. In particular, persist execution intent before external side effects where needed, then persist the outcome and reconcile uncertain results.
+This is illustrative. The exact ordering and transaction boundaries are designed with the code. The fixed rule: persist intent before any external side effect, then persist the outcome, and reconcile when the outcome is uncertain.
 
-## 5. Run lifecycle
+## Normalised model response
 
-Initial proposed states:
+The provider adapter returns content blocks, zero or more tool-call proposals, a finish reason, usage (reported, estimated, or unavailable), provider and model metadata, and a structured error on failure. Provider-specific extras go in a bounded opaque field. Capability differences are kept visible, not flattened away.
 
-- `QUEUED`: accepted but not started.
-- `RUNNING`: runtime can perform an invocation or dispatch eligible work.
-- `WAITING_APPROVAL`: requires a human/policy decision.
-- `WAITING_EXTERNAL`: waiting for a defined external signal/resource (optional; only add when required).
-- `COMPLETED`: successful terminal result.
-- `FAILED`: unrecoverable error or exhausted recovery policy.
-- `CANCELLED`: explicit cancellation completed or safely stopped.
-- `TIMED_OUT`: deadline exceeded (may be represented as a terminal reason instead of a distinct state; decide in Phase 2).
+## Run lifecycle
 
-Terminal states must be immutable except for an explicit administrative correction record. State transitions must be validated in application code and covered by tests.
+| State | Meaning |
+|---|---|
+| `QUEUED` | Accepted, not started |
+| `RUNNING` | May call the model or dispatch work |
+| `WAITING_APPROVAL` | Blocked on a human or policy decision |
+| `WAITING_EXTERNAL` | Blocked on a defined external signal. Add only when needed. |
+| `COMPLETED` | Terminal success |
+| `FAILED` | Unrecoverable error, or recovery exhausted |
+| `CANCELLED` | Cancellation completed |
+| `TIMED_OUT` | Deadline exceeded. Decide in Phase 2 whether this is a state or a terminal reason on `FAILED`. |
 
-## 6. Error classification
+Terminal states never change, apart from an explicit administrative correction record. Transitions are validated in application code and covered by tests.
 
-Distinguish at least:
+## Error classes
 
-- Invalid request/configuration/schema: permanent; do not retry automatically.
-- Authentication/authorization denial: do not retry without changed authorization.
-- Model refusal or policy block: normal semantic outcome, not an infrastructure retry.
-- Rate limit/transient provider error: bounded backoff if safe.
-- Provider timeout/connection interruption: execution outcome may be uncertain; use request identifiers where supported and do not assume no response means no work.
-- Tool input/logic error: generally permanent; return structured diagnostic to the agent only when safe.
-- Tool timeout/process crash: external side effect may be uncertain; use idempotency/reconciliation.
-- Internal invariant violation: fail closed, retain diagnostics, do not ask the model to repair an internal security failure.
+| Class | Handling |
+|---|---|
+| Invalid request, configuration, or schema | Permanent. No retry. |
+| Authorisation denied | No retry without a changed grant |
+| Model refusal or policy block | A normal outcome, not a fault |
+| Rate limit or transient provider error | Bounded backoff, where safe |
+| Provider timeout or dropped connection | Outcome may be unknown. Don't assume no work was done. |
+| Tool input or logic error | Usually permanent. Return a sanitised diagnostic to the model when safe. |
+| Tool timeout or crash | Side effect may be unknown. Reconcile using idempotency. |
+| Internal invariant violation | Fail closed and keep diagnostics. Never ask the model to repair it. |
 
-Errors returned to the model should be sanitized; logs may contain structured diagnostic context but must follow redaction policy.
+Errors shown to the model are sanitised. Logs carry full structured context, subject to redaction.
 
-## 7. Budgets
+## Budgets
 
-Each run should have configurable maxima for wall-clock time, model invocations, tool invocations, total tool concurrency, model token/resource usage where measurable, delegation depth, per-tool timeout, total external calls, and artifact/output size. Budget accounting should be monotonic and tested under concurrency. A model cannot increase its own budget.
+Per run: wall-clock time, model calls, tool calls, tool concurrency, tokens where measurable, delegation depth, per-tool timeout, external calls, and output size. Accounting is monotonic and correct under concurrency. The model cannot raise its own budget.
 
-## 8. Cancellation
+## Cancellation
 
-Cancellation propagates to pending model/tool tasks where the transport supports it. For side-effecting operations, cancellation is best effort: the system must record whether the operation completed, was cancelled, or has an unknown outcome. Do not report cancellation as proof that a remote side effect was rolled back.
+Cancellation propagates to pending model and tool tasks where the transport allows it. For side-effecting operations it is best effort: record whether each operation completed, was cancelled, or has an unknown outcome. Cancellation does not prove that a remote effect was rolled back.
 
-## 9. Deterministic testing
+## Orchestration
 
-The runtime must accept fake model and tool adapters. Tests should script sequences such as final response, tool call then final, multiple tool calls, malformed arguments, refusal, timeout, cancellation, budget exhaustion, and approval pause/resume. No real inference server should be required for core runtime unit tests.
+### Who does what
 
-## 10. Non-responsibilities
+- **Model / planner:** proposes a decomposition or a sequence of tool calls.
+- **Plan validator:** checks structure, operation names, arguments, references, scopes, graph shape, and budgets.
+- **Scheduler:** decides which validated nodes are ready and applies concurrency and resource limits.
+- **Dispatcher:** runs an authorised operation and returns a normalised result.
+- **Run manager:** persists the lifecycle and handles pause, resume, and cancel.
 
-The runtime is not responsible for:
+The model is not the scheduler. It never launches tasks, controls concurrency, or bypasses policy.
 
-- deciding whether a caller is authorized (policy engine owns this);
-- executing arbitrary code in the API process;
-- managing durable workflow history through Temporal in the initial phase;
-- storing full raw telemetry indefinitely;
-- trusting instructions found in retrieved documents or tool output;
-- autonomously changing its own security policy or execution budget.
+### Plans are data
+
+A plan node has: a unique ID, a registered operation, validated input (or typed references to upstream results), dependency IDs, risk metadata taken from the registry (never from the model), a timeout within run policy, a retry or failure profile chosen from approved options, and an idempotency key for external side effects.
+
+Validation rejects duplicate IDs, missing or self dependencies, cycles, unknown operations, unauthorised scopes, oversized graphs, and invalid inputs. Values passed between nodes are references to persisted results, never executable expressions.
+
+### Scheduling
+
+A node is ready when all its dependencies have succeeded and the run is still active. The scheduler picks ready nodes within global, per-run, and per-tool concurrency limits, resource quotas, deadlines, and the failure policy.
+
+The first scheduler is single-process and in-memory. It persists enough intent and status to be recoverable, or movable to a durable engine, later. It makes no crash-safety claims until Phase 7 implements recovery.
+
+Building blocks to study and compose, using as few as the semantics need:
+
+- `asyncio.TaskGroup`: structured concurrency and coordinated cancellation.
+- `asyncio.Semaphore`: a concurrency cap. Not a queue, and not fair.
+- A bounded `asyncio.Queue` plus a worker pool: backpressure and reusable workers.
+- A DAG readiness layer on top of one of the above.
+
+Never call `create_task` without an owner, and never create tasks without a bound.
+
+### Failure policies
+
+Node outcomes: succeeded, failed, timed out, cancelled, skipped, waiting for approval, unknown. Run-level policy is one of:
+
+- **fail-fast:** cancel pending work when a required node fails;
+- **continue-independent:** run unaffected branches and skip dependants;
+- **collect-errors:** let an aggregation step receive structured failures.
+
+Retries apply only to retry-safe operations, within bounded policy. Compensation is an explicitly defined action per operation, not a generic rollback. Writes are never retried automatically.
+
+### Idempotency
+
+Local orchestration cannot guarantee exactly-once side effects on external systems. Use a stable operation key, persist intent, use the remote system's idempotency support where it exists, and reconcile uncertain outcomes. State the guarantee per tool, not system-wide.
+
+### Subagents (Phase 14)
+
+A child agent is a child run with: a parent reference, explicitly scoped tools and permissions, its own budgets, isolated context by default (with explicit handoff of selected content), depth and fan-out limits, propagated cancellation, and a result contract. It never inherits the parent's full authority.
+
+### Temporal boundary (Phase 15)
+
+The scheduler exposes application-level operations: start plan, execute ready node, record outcome, request approval, resume. Temporal, if adopted, implements that port. Workflow code must be deterministic; side effects go in activities. Activities can retry, so tools still need idempotency.
+
+## Testing
+
+Core runtime and scheduler tests use fake model and tool adapters, with no inference server. Required scenarios:
+
+- **Runtime:** final answer; tool call followed by final answer; multiple tool calls; malformed arguments; refusal; provider timeout; cancellation; budget exhaustion; approval pause and resume.
+- **Scheduler:** sequential and parallel DAGs; rejection of cycles, missing dependencies, duplicates, and bad schemas; the concurrency cap is never exceeded; a node never starts before its dependencies; failure propagation follows the policy; cancellation leaves no orphaned tasks; the deadline stops new work; behaviour on duplicate operations is explicit.

@@ -1,89 +1,47 @@
-# Research Note: PostgreSQL 18.7 vs 19.0
+# Research Note: PostgreSQL 18 vs 19
 
-**Snapshot date:** 2026-11-25 · **Decision:** Open
+**Snapshot:** 2026-11-25 · **Decision:** Open; decided in Phase 7.
 
-## 1. Question
+## Facts
 
-Which PostgreSQL major version should be the local platform's initial system-of-record database? PostgreSQL 18.7 and PostgreSQL 19.0 are both candidates at the research snapshot. The choice should be based on compatibility, operational maturity, and representative workload behavior—not release number alone.
+- 18.7 was released on 2026-11-12. 19.0 was released on 2026-11-19.
+- Each major version is supported for five years.
+- New in 19: `INSERT ... ON CONFLICT DO SELECT ... RETURNING`, `REPACK` / `REPACK CONCURRENTLY`, `WAIT` for standby replay (read-after-write on replicas), and parallel autovacuum improvements.
 
-## 2. Verified release facts
+Sources: [19 release notes](https://www.postgresql.org/docs/19/release-19.html) · [18.7 release notes](https://www.postgresql.org/docs/release/18.7/) · [versioning policy](https://www.postgresql.org/support/versioning/)
 
-- PostgreSQL 18.7 release date: 2026-11-12.
-- PostgreSQL 19.0 release date: 2026-11-19.
-- PostgreSQL's major-version policy currently provides five years of support for each major release.
-- PostgreSQL 19 release notes include a new `INSERT ... ON CONFLICT DO SELECT ... RETURNING` capability, `REPACK`/`REPACK CONCURRENTLY`, `WAIT` for synchronous standby replay/read-after-write behavior, parallel autovacuum improvements, and other query/replication/maintenance changes.
+## Relevance here
 
-Sources:
-- https://www.postgresql.org/docs/19/release-19.html
-- https://www.postgresql.org/docs/release/18.7/
-- https://www.postgresql.org/support/versioning/
+| Feature | Value to this project |
+|---|---|
+| `ON CONFLICT DO SELECT ... RETURNING` | Simplifies idempotent get-or-create and claims. 18 can do the same with other patterns, so it's not decisive on its own. |
+| `REPACK CONCURRENTLY` | Helps if the event and invocation tables bloat. Not a concern initially. |
+| `WAIT` / standby replay | Only matters with replicas. Not planned. |
+| Parallel autovacuum | Helps write-heavy workloads at scale. Benchmark with real tables before judging. |
 
-## 3. Potential relevance to this platform
+## Compatibility checks (both versions)
 
-### `INSERT ... ON CONFLICT DO SELECT ... RETURNING`
+The chosen driver (psycopg 3 and/or asyncpg); SQLAlchemy 2.x and Alembic; migration up and down; backup and restore; any extensions we actually use; pooling and prepared statements; JSONB, indexes, constraints, isolation levels, and `SKIP LOCKED` where used; Docker image availability; admin tooling.
 
-Potentially useful for idempotent get-or-create/claim workflows where a conflict should return an existing row. It may simplify some transaction patterns, but PostgreSQL 18 can implement equivalent application behavior using other transaction/query strategies. Do not make this one feature the sole reason to use 19.
+## Workload benchmark
 
-### `REPACK CONCURRENTLY`
+Same schema, hardware, driver, data volume, and concurrency for both versions:
 
-Potentially useful if run/event/invocation tables become large and table/index bloat requires maintenance. This is a future operational concern; the initial local workload may not benefit materially.
+1. Create a thread and run with an idempotency key.
+2. Append sequenced run events at a realistic model and tool cadence.
+3. Update run state under competing cancel, approve, and complete requests.
+4. Claim a tool invocation safely under concurrency.
+5. Read a run's events in sequence order.
+6. Filter recent runs by state and time.
+7. Store bounded JSONB metadata.
+8. Run concurrent readers and writers while measuring p50/p95 latency, throughput, lock waits, CPU and memory, WAL and disk growth, and autovacuum.
 
-### `WAIT` and standby replay
+Warm up consistently, repeat, and report variance.
 
-Potentially useful if we later use replication/read replicas and require read-after-write consistency on a standby. The initial local single-instance system likely does not need this feature.
+## Selection
 
-### Parallel autovacuum and other performance changes
+Choose **19** if drivers, migrations, backup, and extensions all work, there are no regressions, and either the new features help or performance is at least on par.
 
-Potentially beneficial for larger/high-write workloads. Benchmark only after representative tables/indexes and concurrency patterns exist; small synthetic tests may not represent production behavior.
+Choose **18.x** if the ecosystem is materially more mature there, 19 shows blockers, or the new features don't matter yet.
 
-## 4. Compatibility matrix
-
-Test both candidate versions with:
-
-- selected Python driver (psycopg 3 and/or asyncpg);
-- SQLAlchemy 2.x and Alembic selected version;
-- migration create/upgrade/downgrade strategy;
-- backup and restore tools;
-- extensions actually required (avoid adding extensions speculatively);
-- connection pooling and prepared statements;
-- JSONB, indexes, constraints, transaction isolation, `SKIP LOCKED`/locking patterns as used;
-- local Docker/Compose image availability and platform architecture;
-- observability/administration tooling used by the project.
-
-## 5. Representative workload benchmark
-
-Build a small schema/benchmark fixture that models actual expected operations:
-
-1. Create run and thread records with idempotency key.
-2. Append sequenced run events at model/tool-step cadence.
-3. Update run state under competing cancellation/approval/completion requests.
-4. Claim an eligible tool invocation with safe concurrency semantics.
-5. Query recent events/steps for a run in sequence order.
-6. Search/filter recent runs by state and timestamps.
-7. Store bounded structured model/tool metadata in JSONB.
-8. Run concurrent writers and readers while measuring p50/p95 latency, throughput, lock waits, CPU, memory, WAL/disk growth, and autovacuum behavior.
-
-Use the same schema, hardware, driver, data volume, and concurrency for both versions. Warm up consistently, repeat runs, report sample counts and variability, and avoid drawing conclusions from one run.
-
-## 6. Selection criteria
-
-Select PostgreSQL 19 if:
-
-- required drivers/migrations/tools support it reliably;
-- backup/restore and operational workflows are verified;
-- there are no blocking extension or platform compatibility issues;
-- the new SQL/maintenance capabilities provide practical value or performance is at least acceptable;
-- the team accepts the maturity/support implications of adopting a newly released major version.
-
-Select PostgreSQL 18.7 if:
-
-- compatibility or tool ecosystem is materially more mature;
-- 19 reveals blockers/regressions;
-- 19's new capabilities do not matter to the current workload;
-- the conservative baseline better matches project risk tolerance.
-
-Do not assume 18.7 is always safer or 19 is always faster. Record the selected patch version and update policy in an ADR once tests are done.
-
-## 7. Current provisional recommendation
-
-Keep the version open. Prepare a reproducible compatibility/benchmark test during Phase 7, while using 18.7 as a conservative candidate rather than a final decision. Recheck current patch releases when Phase 7 begins; do not hard-code 18.7 if a newer 18.x patch is available then.
+Default until tested: 18.x as the conservative candidate. Use the latest 18 patch available when Phase 7 starts.

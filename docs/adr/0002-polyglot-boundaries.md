@@ -1,23 +1,22 @@
-# ADR 0002: Polyglot by Subsystem, Not by Default Microservices
+# ADR 0002: Languages per Subsystem, Not Microservices by Default
 
-- **Status:** Accepted direction
+- **Status:** Accepted
 - **Date:** 2026-11-25
 
 ## Context
 
-Different workloads benefit from different language ecosystems. Python has strong model/data/evaluation integration; TypeScript fits Node-native tools and future client surfaces; Go and Rust may fit specialized infrastructure or native execution. A single-language mandate can be unnecessarily restrictive, but unnecessary service boundaries add operational complexity.
+Python is strongest for model, data, and evaluation work. TypeScript fits Node-native tools and client surfaces. Go or Rust may suit specialised infrastructure. A single-language rule would be needlessly restrictive, but every extra service boundary adds operational cost.
 
 ## Decision
 
-Use Python as the primary agent runtime/orchestration language. Use TypeScript for Node-native integrations and future client/harness surfaces. Consider Go/Rust only when a measured workload, native interface, deployment requirement, or security boundary justifies a separate component. Start as a Python modular monolith.
+Python is the primary language for the runtime and orchestration. TypeScript is for Node-native integrations and future clients. Go or Rust only when a measured workload, native interface, deployment need, or security boundary justifies a separate component. Start as a Python modular monolith.
 
 ## Consequences
 
-- Cross-language boundaries require explicit schemas and transport contracts.
-- No language is chosen merely for prestige or presumed speed.
-- Separate processes/services need a reason beyond code organization.
-- MCP and HTTP/gRPC can be considered as integration boundaries where appropriate.
+- Cross-language boundaries need explicit schemas and transport contracts (HTTP, gRPC, or MCP).
+- No language gets chosen for prestige or assumed speed.
+- A separate process needs a reason beyond code organisation.
 
 ## Revisit when
 
-A real subsystem has requirements that are demonstrably better met by another language or a separate deployment lifecycle.
+A subsystem has requirements that another language or a separate deployment lifecycle demonstrably meets better.

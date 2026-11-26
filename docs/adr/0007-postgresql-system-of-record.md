@@ -1,23 +1,23 @@
-# ADR 0007: PostgreSQL as Proposed Application System of Record
+# ADR 0007: PostgreSQL as System of Record
 
-- **Status:** Accepted direction; major version and driver open
+- **Status:** Accepted; major version and driver open (decided in Phase 7)
 - **Date:** 2026-11-25
 
 ## Context
 
-The platform stores relational entities (agents, versions, threads, messages, runs, steps, invocations, approvals) plus bounded semi-structured provider/tool metadata. Transactional consistency and queryable relationships are important.
+The platform stores relational entities (agents, versions, threads, messages, runs, steps, invocations, approvals) and bounded semi-structured metadata. Transactional consistency and relational queries matter.
 
 ## Decision
 
-Use PostgreSQL as the primary application store. Evaluate 18.7 and 19.0 with compatibility and representative workload tests. Select Python DB driver (psycopg 3 or asyncpg) after checking SQLAlchemy/Alembic support and concurrency behavior. Use SQLAlchemy 2.x/Alembic as proposed tools, subject to Phase 7 validation.
+PostgreSQL is the primary store. Choose between 18.x and 19.x using compatibility checks and a representative workload test. Choose psycopg 3 or asyncpg after checking SQLAlchemy and Alembic support and concurrency behaviour. SQLAlchemy 2.x and Alembic are the proposed tooling.
 
 ## Consequences
 
-- No second database without a demonstrated requirement.
-- Store event history and queryable state; do not call the system event-sourced unless it meets that definition.
-- Keep transactions short; never hold DB transactions open across LLM or external tool calls.
-- One async session per concurrent unit of work/task where using SQLAlchemy AsyncSession.
+- No second database without a demonstrated need.
+- Event history plus queryable state, which is not event sourcing.
+- Short transactions, never held open across model or tool calls.
+- One `AsyncSession` per concurrent unit of work.
 
 ## Revisit when
 
-Workload profiling or product requirements demonstrate that another database/store is justified, or compatibility/operational testing rejects PostgreSQL candidates.
+Profiling or requirements justify another store, or compatibility testing rules out both candidate versions.

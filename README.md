@@ -1,48 +1,55 @@
-# Agent Platform — Architecture Baseline
+# Agent Platform
 
-**Document set:** 0.2.0 · **Updated:** 2026-11-25  
-**Status:** Project direction approved; detailed decisions retain the status shown in the documents and ADRs.
+A self-hosted, general-purpose AI agent platform, built from first principles as a learning project. The repository currently holds the design: architecture, specifications, decision records, and Phase 0 research. No application code exists yet.
 
-This repository is the durable project reference for designing and implementing a self-hosted, general-purpose AI agent platform. The project is educational as well as technical: implementations must be accompanied by explanations, primary-source research, experiments, tests, and reflection.
+## Direction
 
-## Start here
+- General-purpose agent platform, local and self-hosted, with minimal running cost.
+- API/SDK first. CLI, web inspector, and IDE integrations come later as clients of the same API.
+- Python for the agent runtime and orchestration. TypeScript for Node-native integrations and future clients. Go or Rust only where a measured need justifies them.
+- Ollama for local inference. The runtime talks to models through a provider-neutral adapter.
+- Model profiles (primary, fast, summarizer, specialist, evaluator) are designed in from the start, but one model can serve all of them at first.
+- Native tools and MCP tools share one registry, policy check, and dispatcher.
+- Shell, filesystem, browser, and code execution are long-term goals, behind a separate execution broker and sandbox.
+- A small in-process scheduler first. Temporal only if durable-workflow requirements show up.
+- PostgreSQL as the system of record. The major version (18 or 19) is still open.
 
-1. Read [`docs/INDEX.md`](docs/INDEX.md).
-2. Read [`docs/PROJECT_CHARTER.md`](docs/PROJECT_CHARTER.md) and [`docs/SYSTEM_OVERVIEW.md`](docs/SYSTEM_OVERVIEW.md).
-3. Read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/TECH_STACK.md`](docs/TECH_STACK.md).
-4. Read [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md) before implementation.
-5. Read [`docs/ASSISTANT_WORKING_GUIDE.md`](docs/ASSISTANT_WORKING_GUIDE.md) whenever an AI assistant helps with the repository.
-6. Follow [`PROJECT_INITIALIZATION.md`](PROJECT_INITIALIZATION.md) for Git/repository setup.
+## Where things stand
 
-## Agreed direction
+Phase 0 (environment and architecture discovery). The Windows 11 + WSL2 host is characterised, Docker works from WSL, and Windows-hosted Ollama is reachable from WSL over mirrored networking. Two 4B models are under evaluation. See the status table at the top of [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md).
 
-- General-purpose agent platform, initially local and self-hosted.
-- API/SDK-first product boundary; CLI, web inspector, and IDE integrations are later clients.
-- Python is the primary agent-runtime/orchestration language.
-- TypeScript is available for Node-native integrations and future client/harness surfaces.
-- Go or Rust may be used for specialized infrastructure only when a measured requirement justifies them.
-- Ollama is the initial local inference baseline.
-- Model routing supports multiple profiles/tiers, but the first vertical slice may use one model.
-- Native tools and MCP tools are both first-class integration types.
-- Full execution capability (filesystem, shell, browser, code) is a long-term goal behind a separate security boundary.
-- Build a modest in-process scheduler first; evaluate Temporal when durable workflow requirements justify it.
-- PostgreSQL is the proposed system-of-record database. PostgreSQL 18.7 versus 19.0 remains an explicit evaluation decision.
-- Self-hosted, low-cost development is a design constraint.
+## Documentation
 
-## Status vocabulary
+Start with the charter, architecture, and roadmap. Read the specifications when working on the relevant phase.
 
-- **Agreed:** directly confirmed by the project owner.
-- **Proposed:** recommended baseline, pending evidence or explicit confirmation.
-- **Open:** requires research, environment discovery, or a decision.
-- **Deferred:** intentionally postponed until a stated trigger occurs.
-- **Superseded:** replaced by a later decision; retained for history.
+| Document | Covers |
+|---|---|
+| [Project charter](docs/PROJECT_CHARTER.md) | Purpose, scope, non-goals, use cases, quality attributes |
+| [Architecture](docs/ARCHITECTURE.md) | Components, trust boundaries, request flow, source layout |
+| [Tech stack](docs/TECH_STACK.md) | Technology choices, alternatives, and when to revisit them |
+| [Development roadmap](docs/DEVELOPMENT_ROADMAP.md) | Current status, phases, and exit gates |
+| [Assistant working guide](docs/ASSISTANT_WORKING_GUIDE.md) | How AI assistants should work in this repository |
+| [Learning path](docs/LEARNING_PATH_AND_SOURCES.md) | Books and primary sources, mapped to phases |
 
-Do not silently convert Proposed or Open decisions into Agreed decisions.
+**Specifications:** [runtime and orchestration](docs/RUNTIME_SPEC.md) · [models](docs/MODEL_SPEC.md) · [tools](docs/TOOL_SPEC.md) · [security](docs/SECURITY_SPEC.md) · [data model](docs/DATA_MODEL.md) · [API](docs/API_SPEC.md) · [testing and evaluation](docs/EVALUATION_SPEC.md)
 
-## Current progress
+Observability lives in the architecture doc. The release checklist is Phase 16 of the roadmap.
 
-Phase 0 environment discovery is underway. The initial Windows/WSL2 environment and Docker integration are verified; Windows-hosted Ollama is reachable from WSL via mirrored networking. Initial Qwen3 4B and Nemotron 3 Nano 4B inference and single-tool smoke tests are recorded, but no final model roles have been selected. See `docs/DEVELOPMENT_ROADMAP.md` for checkpoint status.
+**Decisions and research:** [ADRs](docs/adr/README.md) · [research log](docs/RESEARCH_LOG.md) · [environment baseline](docs/research/ENVIRONMENT_BASELINE_2026-11-25.md) · [Ollama benchmarks](docs/research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md) · [sandbox options](docs/research/LOCAL_SANDBOX_OPTIONS.md) · [PostgreSQL 18 vs 19](docs/research/POSTGRES_18_VS_19.md)
 
-## Source freshness
+## Decision status labels
 
-The baseline is dated 2026-11-25. Vendor APIs, SDKs, MCP revisions, model capabilities, security tooling, and database releases change. Re-check official documentation and release notes when a decision is implemented, and record material changes in `docs/RESEARCH_LOG.md` and an ADR.
+| Label | Meaning |
+|---|---|
+| Accepted | Confirmed by the project owner. Implementation details may still be open. |
+| Proposed | Recommended, not yet confirmed or proven. |
+| Open | Needs research, an experiment, or a decision. |
+| Deferred | Postponed until a stated trigger. |
+| Superseded | Replaced by a later decision; kept for history. |
+
+A proposal does not become accepted by being written down. Change a status only when the owner confirms it.
+
+## Repository rules
+
+- Never commit secrets, model weights, database volumes, or generated artifacts.
+- Version-sensitive facts (releases, SDK behaviour, model capabilities) are dated. Recheck them when implementing and record changes in the research log.
