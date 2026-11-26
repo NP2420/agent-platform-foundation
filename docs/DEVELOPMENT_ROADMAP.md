@@ -10,7 +10,7 @@ This table is the single place that tracks project status.
 |---|---|---|
 | 0.1 Host and container environment | Done | [Environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md). Revisit if the host changes. |
 | 0.2 Inference topology | Done | Windows-hosted Ollama over WSL mirrored networking ([ADR 0010](adr/0010-windows-hosted-ollama-initial-deployment.md)) |
-| 0.3 Local model screening | In progress | Throughput measured at 4K. All four tool scenarios (T1–T4) pass for both 4B models. See [benchmarks](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md). |
+| 0.3 Local model screening | In progress | Throughput measured at 4K. All four tool scenarios (T1–T4) pass for both 4B models. Context scaling to 32K measured: Nemotron stays fully on the GPU, Qwen3 4B only to 8K. See [benchmarks](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md). |
 | 0.4 Python and toolchain | Open | WSL has Python 3.14.4 but no pip, uv, or Linux-native Node |
 | 0.5 Phase 0 review | Open | Confirm Phase 1 scope and close Phase 0 |
 | Sandbox host feasibility | Deferred to Phase 10 | `/dev/kvm` exists but the user can't access it. No change until a backend is chosen. |
@@ -18,11 +18,10 @@ This table is the single place that tracks project status.
 
 **Next steps**
 
-1. Measure both 4B models at 8K, 16K, and 32K context: VRAM, CPU/GPU split, throughput.
-2. Repeat the tool scenarios with thinking on.
-3. Move the evaluation harness into the repository (`evals/`, Python, run from WSL, raw JSON saved).
-4. Full mock-tool round trip: tool call → tool result message → final answer.
-5. Select the Python version, then start Phase 1.
+1. Rerun the thinking-on context test with `--num-predict 512` and record Ollama's flash-attention and KV-cache settings. Rerun the Nemotron 16K thinking-off row, which stalled once.
+2. Port the tool scenarios (T1–T4) into `evals/` and add several prompt variants per scenario. Run at 8K, with thinking on and off.
+3. Full mock-tool round trip: tool call → tool result message → final answer.
+4. Select the Python version, then start Phase 1.
 
 ## Working cycle
 

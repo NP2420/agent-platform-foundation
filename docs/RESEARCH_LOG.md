@@ -43,6 +43,10 @@ At 4K both 4B candidates run fully on the GPU: Qwen3 4B 57.0 tok/s (3.3 GB), Nem
 
 **Lesson:** run experiments from a versioned harness, not interactive shells.
 
+### 2026-11-26: Context scaling
+
+With `num_ctx` raised from 4K to 32K, Qwen3 4B grows from 3.3 GB to 8.0 GB and spills to CPU from 16K (77% GPU, then 51%), falling to 1.3 tok/s at 32K. Nemotron 4B grows from 2.8 GB to 3.5 GB, stays on the GPU, and holds about 47–50 tok/s. With thinking off, both recalled a planted code word at every size. With thinking on, Qwen3 used its whole 64-token budget on reasoning. One Nemotron request stalled at 16K and is treated as an outlier. Resource fit favours Nemotron; quality is still untested, so no model is selected. R-005 stays open. Caveats: one run per configuration, an easy needle, and Ollama's flash-attention and KV-cache settings weren't recorded. → [benchmarks](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md#context-scaling-2026-11-26)
+
 ## Entry template
 
 ```markdown

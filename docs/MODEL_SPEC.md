@@ -55,11 +55,11 @@ Capabilities to verify against each exact model tag and Ollama version: text gen
 
 | Model | Role under evaluation |
 |---|---|
-| `qwen3:4b-q4_K_M` | Primary candidate |
-| `nemotron-3-nano:4b` | Efficiency / secondary candidate |
+| `qwen3:4b-q4_K_M` | Candidate. Fully on GPU only up to 8K context on this card. |
+| `nemotron-3-nano:4b` | Candidate. Fully on GPU through 32K context. |
 | `qwen3:8b` | Quality reference. Partly offloads to CPU on this GPU. |
 
-No profile is assigned yet.
+No profile is assigned yet. Resource fit now favours Nemotron at agent-realistic context lengths; output quality is untested, so that is not a selection.
 
 ## Evaluation plan
 

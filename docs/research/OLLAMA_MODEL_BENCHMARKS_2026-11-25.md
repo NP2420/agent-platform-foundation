@@ -2,7 +2,7 @@
 
 **Observed:** 2026-11-25 · **Status:** Exploratory; no model selected.
 
-One laptop, one GPU, 4K context, sequential requests. No concurrency, long context, thermal steady state, or multi-step tasks yet. Treat these as hardware-specific observations, not a model ranking.
+One laptop, one GPU, sequential requests. The throughput and tool tests ran at 4K context; the context-scaling runs cover 4K–32K. No concurrency, thermal steady state, long-context reasoning, or multi-step tasks yet. Treat these as hardware-specific observations, not a model ranking.
 
 ## Setup
 
@@ -74,6 +74,43 @@ Two tools: `get_current_weather(city, unit: celsius|fahrenheit)` and `search_pro
 
 T1, T3, and T4 are summarised from the session log, and the T2 rerun from console output; none of the raw output is in the repository yet. One prompt per scenario per model. This shows each behaviour can happen, not how reliably it happens.
 
+## Context scaling (2026-11-26)
+
+Harness: [`evals/context_scaling.py`](../../evals/context_scaling.py). Raw results: [`20261126T053811Z_context_scaling.jsonl`](../../evals/results/20261126T053811Z_context_scaling.jsonl) (thinking off) and [`20261126T054844Z_context_scaling_think.jsonl`](../../evals/results/20261126T054844Z_context_scaling_think.jsonl) (thinking on). Ollama 0.40.18, full digests in each file's meta line, GPU idle at 3 MiB before each run.
+
+Each row reloads the model at the given `num_ctx` (cold prompt cache), then sends one prompt filled to about 60% of that context, with a code word at the start that the model must repeat. Temperature 0, seed 42, `num_predict` 64.
+
+| Model | `num_ctx` | Ollama allocation | On GPU | Prompt tokens | Prompt tok/s | Generation tok/s (thinking run) |
+|---|---:|---:|---:|---:|---:|---:|
+| Qwen3 4B | 4,096 | 3.3 GB | 100% | 2,087 | 1,868 | 43.5 |
+| Qwen3 4B | 8,192 | 4.0 GB | 100% | 4,197 | 2,027 | 39.6 |
+| Qwen3 4B | 16,384 | 5.5 GB | 77% | 8,387 | 1,413 | 9.0 |
+| Qwen3 4B | 32,768 | 8.0 GB | 51% | 16,815 | 943 | 1.3 |
+| Nemotron 4B | 4,096 | 2.8 GB | 100% | 2,241 | 1,414 | 50.8 |
+| Nemotron 4B | 8,192 | 3.0 GB | 100% | 4,500 | 1,780 | 50.3 |
+| Nemotron 4B | 16,384 | 3.2 GB | 100% | 8,981 | 1,910 | 49.2 |
+| Nemotron 4B | 32,768 | 3.5 GB | 100% | 17,997 | 1,646 | 47.4 |
+
+Prompt speed is from the thinking-off run. Generation speed is from the thinking-on run, because its outputs were longer (64 tokens for Qwen3, 35–59 for Nemotron). The thinking-off run produced 9–10 tokens per row, so its rates are noisy.
+
+**Observations**
+
+- Qwen3 4B's allocation grows by 4.7 GB from 4K to 32K. Nemotron's grows by 0.7 GB. This matches the expectation that Nemotron's hybrid architecture (`nemotron_h`) needs far less memory per token.
+- On this 6 GB card, Qwen3 4B is fully on the GPU only up to 8K. At 16K, 23% of it is on the CPU and generation drops to 9–15 tok/s. At 32K, half is on the CPU and generation is 1.3 tok/s in both runs, which is unusable.
+- Nemotron stays 100% on GPU through 32K, with generation within about 7% of its 4K speed. Prompt processing doesn't slow down either.
+- With a roughly 17–18K-token prompt, Nemotron processed it in 10.9 s and Qwen3 in 17.8 s, even though Qwen3 was handling slightly fewer tokens.
+- The two tokenisers count the same text differently. Nemotron used 7% more tokens at 4K (2,241 vs 2,087).
+- `nvidia-smi` showed at most 4,157 MiB in use (Qwen3 at 16K) and 3,459 MiB for Nemotron at 32K. Qwen3's allocation above that sits in system RAM.
+- With thinking off, both models recalled the code word at every size. With thinking on, Nemotron answered correctly at every size. Qwen3 spent all 64 tokens reasoning and gave no final answer, so the word appears only in its reasoning. Nemotron's reasoning was 35–59 tokens in total.
+
+**Caveats**
+
+- One generation per configuration, one prompt, and an easy single-fact needle. This shows the context works at all, not that the model reasons well over it.
+- Nemotron at 16K with thinking off recorded 0.7 tok/s. That request produced 10 tokens in 14.5 s, while the same configuration with thinking on reached 49 tok/s. Treat it as a one-off stall of unknown cause and don't read anything into it.
+- The Qwen3 thinking-on result reflects the 64-token budget, not recall ability. The first version of the harness counted reasoning text as a recall, so those rows printed `yes`. Both result files predate the fix and use that old definition; the saved responses are unchanged.
+- Ollama's flash attention and KV-cache quantisation settings weren't recorded. Both change memory use, so the numbers hold for this install's settings only.
+- Qwen3's advertised maximum context is 40,960, so 32K is near its limit by design. Nemotron advertises 262,144; nothing above 32K has been tested.
+
 ## Superseded measurements
 
 An earlier script reported first-request load times of 32.96 s for Qwen3 and 14.45 s for Nemotron (totals 77.65 s and 50.73 s). Cold-start conditions weren't controlled and prompt-evaluation time wasn't separated out. Kept as history only; don't compare against the table above.
@@ -81,14 +118,14 @@ An earlier script reported first-request load times of 32.96 s for Qwen3 and 14.
 ## Conclusions so far
 
 1. Windows-hosted Ollama over mirrored networking works ([ADR 0010](../adr/0010-windows-hosted-ollama-initial-deployment.md)).
-2. Both 4B models fit fully on the GPU at 4K.
+2. Both 4B models fit fully on the GPU at 4K. Beyond 8K, only Nemotron does; Qwen3 4B spills to CPU and becomes unusable at 32K.
 3. Both handle basic tool selection, parallel proposals, and asking for missing information in single examples.
 4. Qwen3 8B is a quality reference, not a default, because of the CPU offload on this card.
 5. Correct tool calls grant nothing. The runtime still validates and authorises every call.
 
 ## Next
 
-The order is set by the roadmap status table: context scaling (8K/16K/32K), then thinking on, then the full round trip, error and injection cases, and multiple prompt variants per scenario. All of it through a versioned harness that saves raw JSON, full digests, `done_reason`, and all timing fields.
+The order is set by the roadmap status table: fix the thinking budget and record Ollama settings, then multiple prompt variants per tool scenario (at 8K, thinking on and off), the full round trip, and error and injection cases. All of it through a versioned harness that saves raw JSON, full digests, `done_reason`, and all timing fields.
 
 ## Sources
 
