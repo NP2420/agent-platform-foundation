@@ -28,9 +28,13 @@
 | `tool_invocations` | Intent, attempt, result, and outcome state |
 | `approvals` | A request and decision tied to one exact action |
 | `artifacts` | Metadata for files produced by runs (bytes stored elsewhere) |
-| `evaluation_cases`, `evaluation_runs`, `evaluation_case_results` | Versioned evaluation corpus and results |
+| `users`, `folder_grants` | Accounts and per-user approved folders (milestone 3; a single local principal before that) |
+| `documents` | Indexed file: owner, path, size, modification time, content hash, version where known |
+| `passages` | Searchable chunk of a document with section and line range, and a full-text index |
 
-No tenant or organisation tables until multi-user isolation is a real requirement.
+Every record that belongs to someone carries the owning principal from the start, so adding accounts in milestone 3 needs no migration of meaning. No organisation or tenant tables beyond that.
+
+Evaluation cases and results stay as versioned files in `evals/`, not database tables, until there is a reason to query them.
 
 ```mermaid
 erDiagram
@@ -45,8 +49,9 @@ erDiagram
     RUN ||--o{ APPROVAL : pauses_for
     TOOL_INVOCATION ||--o{ APPROVAL : may_require
     RUN ||--o{ ARTIFACT : produces
-    EVALUATION_RUN ||--o{ EVALUATION_CASE_RESULT : contains
-    EVALUATION_CASE ||--o{ EVALUATION_CASE_RESULT : evaluated_as
+    USER ||--o{ FOLDER_GRANT : approves
+    USER ||--o{ DOCUMENT : owns
+    DOCUMENT ||--o{ PASSAGE : splits_into
 ```
 
 ## Runs and events

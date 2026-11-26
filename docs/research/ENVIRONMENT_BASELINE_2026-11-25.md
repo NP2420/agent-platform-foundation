@@ -41,7 +41,7 @@ This laptop can't keep several models and the full infrastructure stack resident
 | `/dev/kvm` | Present, owned by `root:kvm`; user not in the `kvm` group |
 | Shell `Seccomp` / `NoNewPrivs` | 0 / 0 (this shell only; says nothing about containers) |
 
-Don't change KVM group membership until a KVM-based sandbox is actually chosen (Phase 10).
+Don't change KVM group membership until a KVM-based sandbox is actually chosen (Phase 16).
 
 `.wslconfig` (added for Ollama access; there was none before):
 

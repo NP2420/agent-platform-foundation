@@ -51,15 +51,15 @@ Recheck versions when implementing.
 
 | Phase | Reading |
 |---|---|
-| 0–1 Setup | DDIA 1–2; Python and uv docs |
-| 2 Domain contracts | DDIA 2, 5, 8; JSON Schema |
-| 3–4 Model adapter, loop | AI Engineering 1–4, 9–10; Ollama docs; Anthropic agent articles |
-| 5 Tools | MCP spec; Anthropic tools article; Secure & Reliable Systems |
-| 6 Scheduler | OSTEP concurrency; DDIA 9; asyncio docs |
+| 1 Toolchain | Python and uv docs; GitHub Actions docs |
+| 2 Domain contracts | DDIA 1–2, 5, 8; JSON Schema |
+| 3–4 Model adapters, loop | AI Engineering 1–4, 9–10; Ollama and Anthropic API docs; Anthropic agent articles |
+| 5 Tools and file search | Anthropic tools article; PostgreSQL full-text search chapter; Secure & Reliable Systems |
+| 6 Evaluation | AI Engineering 3–4, 8; retrieval evaluation literature |
 | 7 Persistence | DDIA 3–5, 8–10; PostgreSQL and SQLAlchemy docs |
-| 8–9 API, MCP | SSE spec; MCP SDK docs; OpenTelemetry |
-| 10 Sandbox | OSTEP virtualisation; TLPI; Landlock, gVisor, Firecracker docs |
-| 11 Context | AI Engineering data and evaluation chapters; current retrieval research |
-| 12 Evaluation, ops | AI Engineering 3–4; SRE; OpenTelemetry |
-| 13–14 Routing, delegation | AI Engineering 1–4, 9–10; current multi-agent research |
-| 15–16 Durability, release | DDIA 5, 8–10; Temporal docs; SRE |
+| 8–9 API, observability | SSE spec; OpenTelemetry docs; SRE monitoring chapters |
+| 10–11 Identity, approvals | OWASP authentication and session cheat sheets; Secure & Reliable Systems |
+| 12–14 Writes, orchestrator | DDIA 8–9; OSTEP concurrency; asyncio docs |
+| 15 MCP | MCP spec and SDK docs |
+| 16 Sandbox | OSTEP virtualisation; TLPI; Landlock, gVisor, Firecracker docs |
+| Release review | SRE; Secure & Reliable Systems |

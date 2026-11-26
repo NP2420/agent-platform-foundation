@@ -1,22 +1,20 @@
 # Agent Platform
 
-A self-hosted, general-purpose AI agent platform, built from first principles as a learning project. The repository currently holds the design: architecture, specifications, decision records, and Phase 0 research. No application code exists yet.
+A self-hosted agent platform, built from first principles to practise production-grade AI engineering. The repository holds the design (architecture, specs, decision records), Phase 0 research, and an evaluation harness. Application code starts with milestone 1.
 
 ## Direction
 
-- General-purpose agent platform, local and self-hosted, with minimal running cost.
-- API/SDK first. CLI, web inspector, and IDE integrations come later as clients of the same API.
-- Python for the agent runtime and orchestration. TypeScript for Node-native integrations and future clients. Go or Rust only where a measured need justifies them.
-- Ollama for local inference. The runtime talks to models through a provider-neutral adapter.
-- Model profiles (primary, fast, summarizer, specialist, evaluator) are designed in from the start, but one model can serve all of them at first.
-- Native tools and MCP tools share one registry, policy check, and dispatcher.
-- Shell, filesystem, browser, and code execution are long-term goals, behind a separate execution broker and sandbox.
-- A small in-process scheduler first. Temporal only if durable-workflow requirements show up.
-- PostgreSQL as the system of record. The major version (18 or 19) is still open.
+- **Purpose:** practise building production-grade AI the way a company would: evaluated, secure, observable, and budgeted.
+- **Reference use case:** an agent that works with files. It starts read-only with cited answers, then writes reports, organises files with approval and undo, and finally runs code in a sandbox.
+- **Models are configuration:** Ollama by default; hosted APIs are optional adapters with spend limits.
+- **Security:** model output never authorises anything; file access is deny-by-default through approved folders; every run carries a user identity.
+- **Portable:** containers and environment configuration; runs on a laptop or any Linux host.
+- **Stack:** Python runtime, PostgreSQL, OpenTelemetry. Native and MCP tools share one registry and policy check.
+- **Workflow:** feature branches, pull requests, CI. Licensed Apache-2.0.
 
 ## Where things stand
 
-Phase 0 (environment and architecture discovery). The Windows 11 + WSL2 host is characterised, Docker works from WSL, and Windows-hosted Ollama is reachable from WSL over mirrored networking. Two 4B models are under evaluation. See the status table at the top of [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md).
+Phase 0 is done: the host is characterised, local models are screened, and the goal is agreed. Milestone 1 (cited answers from the CLI) starts with the Phase 1 toolchain. See the status table in [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md).
 
 ## Documentation
 
@@ -33,7 +31,7 @@ Start with the charter, architecture, and roadmap. Read the specifications when 
 
 **Specifications:** [runtime and orchestration](docs/RUNTIME_SPEC.md) · [models](docs/MODEL_SPEC.md) · [tools](docs/TOOL_SPEC.md) · [security](docs/SECURITY_SPEC.md) · [data model](docs/DATA_MODEL.md) · [API](docs/API_SPEC.md) · [testing and evaluation](docs/EVALUATION_SPEC.md)
 
-Observability lives in the architecture doc. The release checklist is Phase 16 of the roadmap.
+Observability lives in the architecture doc. The release checklist is the last section of the roadmap.
 
 **Decisions and research:** [ADRs](docs/adr/README.md) · [research log](docs/RESEARCH_LOG.md) · [environment baseline](docs/research/ENVIRONMENT_BASELINE_2026-11-25.md) · [Ollama benchmarks](docs/research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md) · [sandbox options](docs/research/LOCAL_SANDBOX_OPTIONS.md) · [PostgreSQL 18 vs 19](docs/research/POSTGRES_18_VS_19.md)
 
@@ -51,5 +49,12 @@ A proposal does not become accepted by being written down. Change a status only 
 
 ## Repository rules
 
-- Never commit secrets, model weights, database volumes, or generated artifacts.
+- The repository is public. Personal files, private eval sets (`evals/private/`), secrets, and model weights never enter it.
+- Changes arrive as pull requests; see [ADR 0013](docs/adr/0013-pull-request-workflow.md).
+
+- Never commit database volumes or generated artifacts other than eval results.
 - Version-sensitive facts (releases, SDK behaviour, model capabilities) are dated. Recheck them when implementing and record changes in the research log.
+
+## Licence
+
+[Apache-2.0](LICENSE).

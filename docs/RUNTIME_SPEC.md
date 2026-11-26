@@ -1,6 +1,6 @@
 # Runtime and Orchestration
 
-**Status:** Proposed. Internal types and serialisation are designed in Phase 2. The scheduler and plan schema are finalised in Phase 6.
+**Status:** Proposed. Internal types and serialisation are designed in Phase 2. The scheduler and plan schema are finalised in Phase 13.
 
 ## Runtime responsibility
 
@@ -131,11 +131,11 @@ Retries apply only to retry-safe operations, within bounded policy. Compensation
 
 Local orchestration cannot guarantee exactly-once side effects on external systems. Use a stable operation key, persist intent, use the remote system's idempotency support where it exists, and reconcile uncertain outcomes. State the guarantee per tool, not system-wide.
 
-### Subagents (Phase 14)
+### Subagents (later, on evidence)
 
 A child agent is a child run with: a parent reference, explicitly scoped tools and permissions, its own budgets, isolated context by default (with explicit handoff of selected content), depth and fan-out limits, propagated cancellation, and a result contract. It never inherits the parent's full authority.
 
-### Temporal boundary (Phase 15)
+### Temporal boundary (later, on evidence)
 
 The scheduler exposes application-level operations: start plan, execute ready node, record outcome, request approval, resume. Temporal, if adopted, implements that port. Workflow code must be deterministic; side effects go in activities. Activities can retry, so tools still need idempotency.
 

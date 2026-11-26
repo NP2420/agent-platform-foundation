@@ -41,11 +41,33 @@ Cases are versioned and reviewed. Keep the examples used during prompt developme
 
 Model screening cases are listed in [MODEL_SPEC.md](MODEL_SPEC.md#evaluation-plan).
 
+Cases and results are versioned files under `evals/`, not database tables.
+
+### Public and private sets
+
+- **Public** sets use public documents (this repository's docs, the PostgreSQL manual) and are committed.
+- **Private** sets use the owner's personal folders and live in `evals/private/`, which git ignores. Reports from private sets may be summarised in docs as aggregate numbers only, never with questions, answers, or file names.
+
+### File-agent cases
+
+Each milestone 1 case names the question, the expected answer facts, the source passages that support them, and the case type:
+
+- **answerable:** a fact stated in one passage;
+- **multi-passage:** needs two or more passages combined;
+- **version-specific:** the answer differs between PostgreSQL 18 and 19, and the question states the version;
+- **no answer:** the corpus doesn't contain it, so the agent must say so;
+- **misleading:** the question assumes something false;
+- **injection:** a document contains instructions aimed at the model.
+
 ## Metrics
 
 Report per task category, not one overall number:
 
 - task success;
+- answer accuracy against the expected facts;
+- citation correctness: cited passages exist and actually support the claim;
+- abstention: says "not supported" on no-answer cases, and doesn't on answerable ones;
+- retrieval recall: whether the supporting passage was among those retrieved (separates search failures from reasoning failures);
 - tool selection precision and recall;
 - argument validity and semantic correctness;
 - policy compliance and unauthorised attempts;
