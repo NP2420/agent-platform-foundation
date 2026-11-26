@@ -21,7 +21,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
@@ -46,7 +46,9 @@ SENTENCES = [
 def http(method, path, body=None, timeout=900):
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(
-        BASE_URL + path, data=data, method=method,
+        BASE_URL + path,
+        data=data,
+        method=method,
         headers={"Content-Type": "application/json"},
     )
     start = time.perf_counter()
@@ -72,10 +74,16 @@ def unload_all():
 
 
 def load(model, num_ctx):
-    _, wall = http("POST", "/api/chat", {
-        "model": model, "messages": [], "keep_alive": "5m",
-        "options": {"num_ctx": num_ctx},
-    })
+    _, wall = http(
+        "POST",
+        "/api/chat",
+        {
+            "model": model,
+            "messages": [],
+            "keep_alive": "5m",
+            "options": {"num_ctx": num_ctx},
+        },
+    )
     return wall
 
 
@@ -95,14 +103,24 @@ def ps_entry(model):
 
 def nvidia_smi_mib():
     try:
-        out = subprocess.run(
-            ["nvidia-smi", "--query-gpu=memory.used,memory.total",
-             "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=10, check=True,
-        ).stdout.strip().splitlines()[0]
+        out = (
+            subprocess.run(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=memory.used,memory.total",
+                    "--format=csv,noheader,nounits",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=True,
+            )
+            .stdout.strip()
+            .splitlines()[0]
+        )
         used, total = (int(x) for x in out.split(","))
         return {"used_mib": used, "total_mib": total}
-    except (OSError, subprocess.SubprocessError, ValueError, IndexError):
+    except OSError, subprocess.SubprocessError, ValueError, IndexError:
         return None
 
 
@@ -122,8 +140,13 @@ def build_prompt(num_ctx, fill):
 
 
 def run_config(model, num_ctx, fill, think, num_predict):
-    record = {"model": model, "num_ctx": num_ctx, "fill": fill, "think": think,
-              "num_predict": num_predict}
+    record = {
+        "model": model,
+        "num_ctx": num_ctx,
+        "fill": fill,
+        "think": think,
+        "num_predict": num_predict,
+    }
     try:
         unload(model)
         record["load_wall_s"] = round(load(model, num_ctx), 2)
@@ -133,10 +156,17 @@ def run_config(model, num_ctx, fill, think, num_predict):
         prompt = build_prompt(num_ctx, fill)
         record["prompt_sha256"] = hashlib.sha256(prompt.encode()).hexdigest()[:16]
         request = {
-            "model": model, "stream": False, "think": think, "keep_alive": "5m",
+            "model": model,
+            "stream": False,
+            "think": think,
+            "keep_alive": "5m",
             "messages": [{"role": "user", "content": prompt}],
-            "options": {"num_ctx": num_ctx, "num_predict": num_predict,
-                        "temperature": 0, "seed": 42},
+            "options": {
+                "num_ctx": num_ctx,
+                "num_predict": num_predict,
+                "temperature": 0,
+                "seed": 42,
+            },
         }
         resp, wall = http("POST", "/api/chat", request)
         record["response"] = resp
@@ -187,11 +217,19 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--models", nargs="+", default=DEFAULT_MODELS)
     ap.add_argument("--ctx", nargs="+", type=int, default=DEFAULT_CTX)
-    ap.add_argument("--fill", type=float, default=0.6,
-                    help="fraction of num_ctx to fill with prompt text (default 0.6)")
+    ap.add_argument(
+        "--fill",
+        type=float,
+        default=0.6,
+        help="fraction of num_ctx to fill with prompt text (default 0.6)",
+    )
     ap.add_argument("--think", action="store_true", help="enable thinking (default off)")
-    ap.add_argument("--num-predict", type=int, default=DEFAULT_NUM_PREDICT,
-                    help="max output tokens (default 64; raise it with --think)")
+    ap.add_argument(
+        "--num-predict",
+        type=int,
+        default=DEFAULT_NUM_PREDICT,
+        help="max output tokens (default 64; raise it with --think)",
+    )
     ap.add_argument("--out", type=Path, default=Path(__file__).parent / "results")
     args = ap.parse_args()
 
@@ -206,19 +244,30 @@ def main():
         sys.exit(f"Models not installed: {', '.join(missing)}")
 
     args.out.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     path = args.out / f"{stamp}_context_scaling{'_think' if args.think else ''}.jsonl"
     meta = {
-        "kind": "meta", "started_utc": stamp, "ollama_version": version.get("version"),
-        "base_url": BASE_URL, "digests": {m: digests[m] for m in args.models},
-        "args": {"models": args.models, "ctx": args.ctx, "fill": args.fill,
-                 "think": args.think, "num_predict": args.num_predict,
-                 "temperature": 0, "seed": 42},
+        "kind": "meta",
+        "started_utc": stamp,
+        "ollama_version": version.get("version"),
+        "base_url": BASE_URL,
+        "digests": {m: digests[m] for m in args.models},
+        "args": {
+            "models": args.models,
+            "ctx": args.ctx,
+            "fill": args.fill,
+            "think": args.think,
+            "num_predict": args.num_predict,
+            "temperature": 0,
+            "seed": 42,
+        },
         "gpu_idle": nvidia_smi_mib(),
     }
     print(f"Ollama {meta['ollama_version']} at {BASE_URL}; writing {path}")
-    print(f"{'model':<22}{'ctx':>7}{'GB':>8}{'GPU':>6}{'smi MiB':>9}{'prompt':>9}"
-          f"{'pp t/s':>9}{'tg t/s':>8}{'out':>6}{'needle':>7}{'':>7}{'wall s':>8}")
+    print(
+        f"{'model':<22}{'ctx':>7}{'GB':>8}{'GPU':>6}{'smi MiB':>9}{'prompt':>9}"
+        f"{'pp t/s':>9}{'tg t/s':>8}{'out':>6}{'needle':>7}{'':>7}{'wall s':>8}"
+    )
 
     unload_all()
     with path.open("w", encoding="utf-8") as fh:

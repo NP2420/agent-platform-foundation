@@ -31,7 +31,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 PACKAGES = ["pytest", "ruff", "mypy", "pydantic", "fastapi", "sqlalchemy", "httpx"]
@@ -68,7 +68,7 @@ def main():
     if "--venv" in args:
         i = args.index("--venv")
         venv_parent = Path(args[i + 1]).expanduser().resolve()
-        del args[i:i + 2]
+        del args[i : i + 2]
     if len(args) != 1:
         sys.exit(__doc__)
     if not shutil.which("uv"):
@@ -93,14 +93,18 @@ def main():
     results = {}
     results["uv venv"] = run(["uv", "venv", "-q", str(venv)], root)
     results["uv pip install (warm cache)"] = run(
-        ["uv", "pip", "install", "-q", "--python", py, *PACKAGES], root)
+        ["uv", "pip", "install", "-q", "--python", py, *PACKAGES], root
+    )
     results["import packages"] = median_of(
-        [py, "-c", "import fastapi, sqlalchemy, pydantic, httpx"], root)
+        [py, "-c", "import fastapi, sqlalchemy, pydantic, httpx"], root
+    )
     generate_tests(root)
     results["pytest 1,000 tests"] = median_of(
-        [py, "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests"], root)
+        [py, "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests"], root
+    )
     results["ruff check tests"] = median_of(
-        [str(venv / "bin" / "ruff"), "check", "--no-cache", "--exit-zero", "-q", "tests"], root)
+        [str(venv / "bin" / "ruff"), "check", "--no-cache", "--exit-zero", "-q", "tests"], root
+    )
     (root / ".gitignore").write_text(".venv/\n")
     run(["git", "init", "-q"], root)
     run(["git", "add", "tests", ".gitignore"], root)
@@ -113,7 +117,7 @@ def main():
     print(f"  {'total':<30}{total:>9.3f} s")
 
     record = {
-        "when_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "when_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "target": str(root.parent),
         "venv": str(venv),
         "python": platform.python_version(),

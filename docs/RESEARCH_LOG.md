@@ -6,7 +6,6 @@ Dated findings that shaped decisions. Each entry is short and links to the resea
 
 | ID | Question | Evidence needed | Phase |
 |---|---|---|---|
-| R-002 | Python 3.14 or 3.15? | Dependency support matrix, toolchain run | 1 |
 | R-003 | PostgreSQL 18 or 19? | Compatibility plus workload benchmark | 7 |
 | R-004 | psycopg 3 or asyncpg? | Compatibility, migrations, concurrency | 7 |
 | R-005 | Which local models, for which profiles? | Versioned tool-use suite, context scaling, resource use | 0 / 3 |
@@ -18,7 +17,7 @@ Dated findings that shaped decisions. Each entry is short and links to the resea
 | R-011 | Is full-text search enough, or are embeddings needed? | Milestone 1 eval: retrieval misses by cause | 6 |
 | R-012 | Which model backs the default profile? | Milestone 1 eval: local vs hosted accuracy, cost, latency | 6 |
 
-Closed: R-001 (host environment), 2026-11-25.
+Closed: R-001 (host environment), 2026-11-25. R-002 (Python 3.15), 2026-11-26.
 
 ## Entries
 
@@ -62,6 +61,10 @@ Mapped what would change if this ran as a production application at a large manu
 ### 2026-11-26: Where the working copy lives
 
 Benchmarked the dev loop on `/mnt/c` vs WSL ext4: 82.8 s vs 1.5 s in total, 19.2 s vs 0.8 s for 1,000 tests. Moving only the venv to ext4 still left tests at 13.9 s, because the cost is per file opened across the Windows boundary. Decision: the owner works in a WSL ext4 clone; the assistant keeps the Windows-side folder and syncs through git. → [environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md), [ADR 0013](adr/0013-pull-request-workflow.md)
+
+### 2026-11-26: Python version and toolchain
+
+CPython 3.14.10 and 3.15.2 both installed the full planned dependency set from prebuilt wheels with source builds disabled, including later candidates temporalio and pgvector; Ruff and mypy accept 3.15 as a target. Chose 3.15, uv, Ruff, strict mypy, pytest, and GitHub Actions pinned to commit SHAs. → [ADR 0014](adr/0014-python-toolchain.md)
 
 ## Entry template
 
