@@ -4,6 +4,10 @@
 Usage (from WSL, with uv on PATH):
     python3 scripts/bench_fs.py /mnt/c/Users/<you>/bench-c
     python3 scripts/bench_fs.py ~/bench-wsl
+    python3 scripts/bench_fs.py /mnt/c/Users/<you>/bench-c --venv ~/bench-venv   # hybrid
+
+--venv puts the virtualenv somewhere else (e.g. WSL ext4) while the project
+files stay in the target directory.
 
 Each run creates a scratch project in the given directory and times:
   - creating a virtualenv with uv
@@ -59,14 +63,25 @@ def generate_tests(root):
 
 
 def main():
-    if len(sys.argv) != 2:
+    args = sys.argv[1:]
+    venv_parent = None
+    if "--venv" in args:
+        i = args.index("--venv")
+        venv_parent = Path(args[i + 1]).expanduser().resolve()
+        del args[i:i + 2]
+    if len(args) != 1:
         sys.exit(__doc__)
     if not shutil.which("uv"):
         sys.exit("uv not found on PATH. Install it first: https://docs.astral.sh/uv/")
-    root = Path(sys.argv[1]).expanduser().resolve() / "bench_fs_scratch"
+    root = Path(args[0]).expanduser().resolve() / "bench_fs_scratch"
     if root.exists():
         shutil.rmtree(root)
     root.mkdir(parents=True)
+    venv = (venv_parent / "bench_fs_venv") if venv_parent else (root / ".venv")
+    if venv_parent:
+        if venv.exists():
+            shutil.rmtree(venv)
+        venv_parent.mkdir(parents=True, exist_ok=True)
 
     # Warm uv's cache on the home filesystem so the timed install measures
     # writing into the target filesystem, not downloading.
@@ -74,9 +89,9 @@ def main():
         run(["uv", "venv", "-q", f"{warm}/.venv"], warm)
         run(["uv", "pip", "install", "-q", "--python", f"{warm}/.venv/bin/python", *PACKAGES], warm)
 
-    py = str(root / ".venv" / "bin" / "python")
+    py = str(venv / "bin" / "python")
     results = {}
-    results["uv venv"] = run(["uv", "venv", "-q", ".venv"], root)
+    results["uv venv"] = run(["uv", "venv", "-q", str(venv)], root)
     results["uv pip install (warm cache)"] = run(
         ["uv", "pip", "install", "-q", "--python", py, *PACKAGES], root)
     results["import packages"] = median_of(
@@ -84,14 +99,14 @@ def main():
     generate_tests(root)
     results["pytest 1,000 tests"] = median_of(
         [py, "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests"], root)
-    site = next((root / ".venv" / "lib").glob("python*/site-packages"))
-    results["ruff check site-packages"] = median_of(
-        [str(root / ".venv" / "bin" / "ruff"), "check", "--no-cache", "--exit-zero", "-q", str(site)], root)
+    results["ruff check tests"] = median_of(
+        [str(venv / "bin" / "ruff"), "check", "--no-cache", "--exit-zero", "-q", "tests"], root)
+    (root / ".gitignore").write_text(".venv/\n")
     run(["git", "init", "-q"], root)
-    run(["git", "add", "tests"], root)
+    run(["git", "add", "tests", ".gitignore"], root)
     results["git status"] = median_of(["git", "status", "--porcelain"], root)
 
-    print(f"\n{root}")
+    print(f"\nproject: {root}\nvenv:    {venv}")
     for name, secs in results.items():
         print(f"  {name:<30}{secs:>9.3f} s")
     total = sum(results.values())
@@ -100,6 +115,7 @@ def main():
     record = {
         "when_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "target": str(root.parent),
+        "venv": str(venv),
         "python": platform.python_version(),
         "uv": subprocess.run(["uv", "--version"], capture_output=True, text=True).stdout.strip(),
         "repeats": REPEATS,
@@ -109,7 +125,8 @@ def main():
     with open("bench_fs_results.jsonl", "a", encoding="utf-8") as fh:
         fh.write(json.dumps(record) + "\n")
     print(f"\nAppended to {os.path.abspath('bench_fs_results.jsonl')}")
-    print(f"Delete the scratch directory when done: rm -rf {root}")
+    extra = f" {venv}" if venv_parent else ""
+    print(f"Delete the scratch directories when done: rm -rf {root}{extra}")
 
 
 if __name__ == "__main__":
