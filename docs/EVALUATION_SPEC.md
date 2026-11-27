@@ -37,7 +37,7 @@ Each case records:
 
 Each result records the model digest, prompt or agent version, tool registry version, runtime version, and settings.
 
-Cases are versioned and reviewed. Keep the examples used during prompt development separate from held-out regression cases.
+Cases are versioned and reviewed by the owner. The case schema and the confidence-interval method are designed in M1.3.
 
 Model screening cases are listed in [MODEL_SPEC.md](MODEL_SPEC.md#evaluation-plan).
 
@@ -45,8 +45,18 @@ Cases and results are versioned files under `evals/`, not database tables.
 
 ### Public and private sets
 
-- **Public** sets use public documents (this repository's docs, the PostgreSQL manual) and are committed.
+- **Public** sets use public documents (public-domain US Army equipment manuals and the PostgreSQL 18 and 19 manuals) and are committed.
 - **Private** sets use the owner's personal folders and live in `evals/private/`, which git ignores. Reports from private sets may be summarised in docs as aggregate numbers only, never with questions, answers, or file names.
+
+### Splits and size
+
+Methodology and reasons are in [ADR 0017](adr/0017-eval-first.md).
+
+- **Dev:** used freely while building and tuning prompts.
+- **Held-out test:** run only at milestone reviews and for model or prompt decisions.
+- **Regression:** every fixed bug becomes a permanent case.
+
+About 25 test cases per category, starting from about 10. Every reported rate carries a 95% confidence interval and its sample size.
 
 ### File-agent cases
 
@@ -54,7 +64,7 @@ Each milestone 1 case names the question, the expected answer facts, the source 
 
 - **answerable:** a fact stated in one passage;
 - **multi-passage:** needs two or more passages combined;
-- **version-specific:** the answer differs between PostgreSQL 18 and 19, and the question states the version;
+- **version-specific:** the answer differs between document versions (PostgreSQL 18 vs 19, or two revisions of a manual), and the question states the version;
 - **no answer:** the corpus doesn't contain it, so the agent must say so;
 - **misleading:** the question assumes something false;
 - **injection:** a document contains instructions aimed at the model.
@@ -84,6 +94,12 @@ Always include the sample size and failure examples. Never compare models across
 ## Grading
 
 Prefer exact and schema checks, then reference-based graders. Use LLM judges only where they are justified, calibrate them against a human-reviewed sample, and track drift. An LLM judge is never the only evidence for security behaviour.
+
+For milestone 1: code checks score citations (exist, and were retrieved), abstention, and retrieval recall. An LLM judge scores answer correctness against the expected facts with a written rubric. Its scores count only after it agrees well enough with the owner's labels on a sample; the agreement rate is reported with every run.
+
+### Tooling
+
+Our own harness, with cases as versioned JSONL. A time-boxed study in M1.3 ports about five cases to [Inspect AI](https://inspect.aisi.org.uk/) and [promptfoo](https://www.promptfoo.dev/) and compares them in a learning note.
 
 ## Regressions
 

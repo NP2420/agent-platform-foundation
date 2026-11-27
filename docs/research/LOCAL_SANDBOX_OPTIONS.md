@@ -1,6 +1,6 @@
 # Research Note: Execution Sandbox Options
 
-**Decision:** Open; decided in Phase 16. No shell or code execution until then.
+**Decision:** Open; decided in M5.1. No shell or code execution until then.
 
 ## Problem
 

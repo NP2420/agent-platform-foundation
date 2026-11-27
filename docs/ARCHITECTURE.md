@@ -122,7 +122,7 @@ sequenceDiagram
 The target shape. Create directories as their phase starts, not all at once.
 
 ```text
-pyproject.toml, uv.lock, .python-version   # Phase 1
+pyproject.toml, uv.lock, .python-version   # M1.1
 src/agent_platform/
     domain/  application/  runtime/  orchestration/  models/
     tools/  security/  persistence/  api/  observability/

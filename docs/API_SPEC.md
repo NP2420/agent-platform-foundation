@@ -1,6 +1,6 @@
 # API and Event Protocol
 
-**Status:** API-first is accepted. Paths and wire schemas are proposals, refined in Phase 8.
+**Status:** API-first is accepted. Paths and wire schemas are proposals, refined in M2.2.
 
 ## Boundary
 

@@ -1,6 +1,6 @@
 # ADR 0008: Separate Execution Broker for Powerful Capabilities
 
-- **Status:** Accepted; sandbox backend open (decided in Phase 16)
+- **Status:** Accepted; sandbox backend open (decided in M5.1)
 - **Date:** 2026-11-25
 
 ## Context

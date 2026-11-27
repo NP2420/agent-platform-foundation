@@ -5,7 +5,7 @@
 
 ## Context
 
-[ADR 0003](0003-python-agent-runtime.md) left the interpreter version open: pick the newest version that the full dependency set supports. Phase 1 needs the version, the environment manager, and one lint, format, type, and test setup that CI enforces.
+[ADR 0003](0003-python-agent-runtime.md) left the interpreter version open: pick the newest version that the full dependency set supports. M1.1 needs the version, the environment manager, and one lint, format, type, and test setup that CI enforces.
 
 ## Evidence
 

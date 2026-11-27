@@ -1,6 +1,6 @@
 # Data Model
 
-**Status:** PostgreSQL is accepted as the system of record. Tables and columns are conceptual until Phase 7. The major version and driver are open ([research note](research/POSTGRES_18_VS_19.md)).
+**Status:** PostgreSQL is accepted as the system of record. Tables and columns are conceptual until M2.1. The major version and driver are open ([research note](research/POSTGRES_18_VS_19.md)).
 
 ## Principles
 

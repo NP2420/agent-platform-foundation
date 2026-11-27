@@ -4,18 +4,19 @@ Dated findings that shaped decisions. Each entry is short and links to the resea
 
 ## Open questions
 
-| ID | Question | Evidence needed | Phase |
+| ID | Question | Evidence needed | Where |
 |---|---|---|---|
-| R-003 | PostgreSQL 18 or 19? | Compatibility plus workload benchmark | 7 |
-| R-004 | psycopg 3 or asyncpg? | Compatibility, migrations, concurrency | 7 |
-| R-005 | Which local models, for which profiles? | Versioned tool-use suite, context scaling, resource use | 0 / 3 |
-| R-006 | Which sandbox backend? | Threat model and negative tests on a Linux host | 16 |
-| R-007 | Which MCP SDK and protocol revision? | Release notes, migration guide, contract test | 15 |
+| R-003 | PostgreSQL 18 or 19? | Compatibility plus workload benchmark | M2.1 |
+| R-004 | psycopg 3 or asyncpg? | Compatibility, migrations, concurrency | M2.1 |
+| R-005 | Which local models, for which profiles? | Versioned tool-use suite, context scaling, resource use | M1.8 |
+| R-006 | Which sandbox backend? | Threat model and negative tests on a Linux host | M5.1 |
+| R-007 | Which MCP SDK and protocol revision? | Release notes, migration guide, contract test | M4.4 |
 | R-008 | Is Temporal justified? | Durability requirements, failure-injection comparison | Later |
 | R-009 | Do tiered models beat one model? | Same cases and hardware, cost vs quality | Later |
-| R-010 | Which observability backend? | Usefulness vs local resource cost | 9 |
-| R-011 | Is full-text search enough, or are embeddings needed? | Milestone 1 eval: retrieval misses by cause | 6 |
-| R-012 | Which model backs the default profile? | Milestone 1 eval: local vs hosted accuracy, cost, latency | 6 |
+| R-010 | Which observability backend? | Usefulness vs local resource cost | M2.3 |
+| R-011 | Is full-text search enough, or are embeddings needed? | Milestone 1 eval: retrieval misses by cause | M1.8 |
+| R-012 | Which model backs the default profile? | Milestone 1 eval: local vs hosted accuracy, cost, latency | M1.8 |
+| R-013 | Does an agent loop beat a fixed pipeline, and which tool-call method works on small models? | Four-way comparison on the same eval set | M1.8 |
 
 Closed: R-001 (host environment), 2026-11-25. R-002 (Python 3.15), 2026-11-26.
 
@@ -23,9 +24,9 @@ Closed: R-001 (host environment), 2026-11-25. R-002 (Python 3.15), 2026-11-26.
 
 ### 2026-11-25: Initial technology snapshot
 
-- **PostgreSQL:** 18.7 (Nov 12) and 19.0 (Nov 19) are both current. 19 adds features with modest relevance here. Version choice deferred to Phase 7. → [note](research/POSTGRES_18_VS_19.md)
+- **PostgreSQL:** 18.7 (Nov 12) and 19.0 (Nov 19) are both current. 19 adds features with modest relevance here. Version choice deferred to M2.1. → [note](research/POSTGRES_18_VS_19.md)
 - **Python:** 3.15.2 and 3.14.10 were both released 2026-10-25. Start from 3.14 and test 3.15. `uv` gives `pyproject.toml` plus a committed `uv.lock`. → [devguide](https://devguide.python.org/versions/), [uv](https://docs.astral.sh/uv/guides/projects/)
-- **MCP:** use the official Python and TypeScript SDKs. The v2 SDK line was described as targeting the 2026-07-28 protocol revision; confirm in Phase 15. → [spec](https://modelcontextprotocol.io/specification/)
+- **MCP:** use the official Python and TypeScript SDKs. The v2 SDK line was described as targeting the 2026-07-28 protocol revision; confirm in M4.4. → [spec](https://modelcontextprotocol.io/specification/)
 - **Ollama:** supports chat tool calls and JSON-schema structured output; reliability depends on the model. → [API](https://github.com/ollama/ollama/blob/main/docs/api.md)
 - **Temporal:** workflow state is rebuilt by replay, so side effects go in activities, which may run more than once. Build in-process first ([ADR 0006](adr/0006-in-process-before-temporal.md)). → [durable execution](https://docs.temporal.io/durable-execution)
 - **Agent security:** OWASP's 2026 agentic Top 10 used as a checklist. Landlock, rootless Docker, and gVisor have different boundaries; a container alone is no argument. → [note](research/LOCAL_SANDBOX_OPTIONS.md)
@@ -69,6 +70,10 @@ CPython 3.14.10 and 3.15.2 both installed the full planned dependency set from p
 ### 2026-11-26: Type checker and domain types
 
 Compared mypy, Pyright, ty, and Pyrefly. Pyright has much higher typing-spec conformance than mypy; current mypy is faster than Pyright; ty is still 0.0.x with no stable API. The earlier objection to Pyright, a Node download at first run, disappears with the `pyright[nodejs]` extra. Owner chose Pyright ([ADR 0015](adr/0015-pyright.md)). For domain types the owner chose Pydantic over dataclasses or attrs; Pydantic is already required by the Anthropic SDK, the MCP SDK, and FastAPI ([ADR 0016](adr/0016-pydantic-domain-types.md)). → [pydevtools comparison](https://pydevtools.com/handbook/explanation/how-do-mypy-pyright-and-ty-compare/)
+
+### 2026-11-26: Milestone 1 plan and eval methodology
+
+Reordered milestone 1 eval-first: the eval harness comes right after the domain types, and a fixed pipeline baseline comes before the agent loop. Both run with two tool-call methods and with local and hosted models. Eval splits are dev, held-out test, and regression, at about 25 test cases per category, with confidence intervals on every rate. Grading is code checks plus an LLM judge checked against the owner's labels. Phases are now numbered per milestone (M1.3). → [ADR 0017](adr/0017-eval-first.md), [roadmap](DEVELOPMENT_ROADMAP.md)
 
 ## Entry template
 

@@ -27,7 +27,7 @@ Polyglot does not mean microservices. Another language becomes a separate compon
 
 ## Persistence
 
-**Proposed:** PostgreSQL with SQLAlchemy 2.x and Alembic. The major version (18 or 19) is decided in Phase 7 ([research note](research/POSTGRES_18_VS_19.md)). Driver: psycopg 3 or asyncpg, chosen on compatibility, migrations, typing, and a realistic benchmark rather than synthetic throughput.
+**Proposed:** PostgreSQL with SQLAlchemy 2.x and Alembic. The major version (18 or 19) is decided in M2.1 ([research note](research/POSTGRES_18_VS_19.md)). Driver: psycopg 3 or asyncpg, chosen on compatibility, migrations, typing, and a realistic benchmark rather than synthetic throughput.
 
 **Alternatives:** SQLModel, raw psycopg, or Kysely/Drizzle if a TypeScript service ever owns a database. No second database without a specific workload.
 
@@ -62,7 +62,7 @@ Native Python tools go through our dispatcher. MCP uses the official Python SDK,
 ## CI and repository
 
 - GitHub, public, Apache-2.0. Feature branches and pull requests; `master` is protected ([ADR 0013](adr/0013-pull-request-workflow.md)).
-- GitHub Actions on Linux: Ruff, type check, and pytest on every PR; the public eval set once it can run in CI (Phase 9). Hosted-model evals run only when a key is configured and never on PRs from forks.
+- GitHub Actions on Linux: Ruff, type check, and pytest on every PR; the public eval set once it can run in CI (M2.3). Hosted-model evals run only when a key is configured and never on PRs from forks.
 
 ## Local infrastructure
 

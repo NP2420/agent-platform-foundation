@@ -1,6 +1,6 @@
 # Runtime and Orchestration
 
-**Status:** Proposed. Internal types and serialisation are designed in Phase 2. The scheduler and plan schema are finalised in Phase 13.
+**Status:** Proposed. Internal types and serialisation are designed in M1.2. The scheduler and plan schema are finalised in M4.2.
 
 ## Runtime responsibility
 
@@ -108,7 +108,7 @@ Validation rejects duplicate IDs, missing or self dependencies, cycles, unknown 
 
 A node is ready when all its dependencies have succeeded and the run is still active. The scheduler picks ready nodes within global, per-run, and per-tool concurrency limits, resource quotas, deadlines, and the failure policy.
 
-The first scheduler is single-process and in-memory. It persists enough intent and status to be recoverable, or movable to a durable engine, later. It makes no crash-safety claims until Phase 7 implements recovery.
+The first scheduler is single-process and in-memory. It persists enough intent and status to be recoverable, or movable to a durable engine, later. It makes no crash-safety claims until M2.1 implements recovery.
 
 Building blocks to study and compose, using as few as the semantics need:
 
