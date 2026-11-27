@@ -10,7 +10,7 @@ A production system has to answer, for any answer it gives: which document versi
 
 ## Decision
 
-**Classification.** Every document is `public`, `internal`, or `restricted`. The default is `internal`, set per folder grant. `restricted` content is never sent to a hosted model, never captured in debug payloads, and its reads are audited ([security spec](../SECURITY_SPEC.md#file-access), [observability spec](../OBSERVABILITY_SPEC.md#audit-trail)).
+**Classification.** Every document is `public`, `internal`, or `restricted`. The default is `internal`, set per folder grant. `restricted` content is never sent to a hosted model, never captured in debug payloads, and its reads are audited ([security spec](../design/security.md#file-access), [observability spec](../design/observability.md#audit-trail)).
 
 **Public corpus.** Equipment manuals and the PostgreSQL 18 and 19 manuals.
 
@@ -23,7 +23,7 @@ The corpus is not committed. `corpus/manifest.toml` lists each document's URL, l
 
 **Lineage.** Every passage traces to a document ID, document version, and content hash. Every answer traces to its passages, and every run records the model digest, prompt version, and retrieval arm. Given a run ID, the exact inputs behind an answer can be named.
 
-**Models.** The licence registry and digest pinning are in the [model spec](../MODEL_SPEC.md#model-registry-licences-and-pinning). A model with no recorded licence can't be used. Python dependencies are covered by [ADR 0022](0022-licences-code-scanning-coverage.md).
+**Models.** The licence registry and digest pinning are in the [model spec](../design/models.md#model-registry-licences-and-pinning). A model with no recorded licence can't be used. Python dependencies are covered by [ADR 0022](0022-licences-code-scanning-coverage.md).
 
 **Private data.** Sets built from the owner's files live in git-ignored `evals/private/` and are reported only as aggregates ([ADR 0017](0017-eval-first.md)). Nothing derived from private files (passages, embeddings, traces) is committed.
 

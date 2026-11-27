@@ -39,7 +39,7 @@ Each result records the model digest, prompt or agent version, tool registry ver
 
 Cases are versioned and reviewed by the owner. The case schema and the confidence-interval method are designed in M1.3.
 
-Model screening cases are listed in [MODEL_SPEC.md](MODEL_SPEC.md#evaluation-plan).
+Model screening cases are listed in [models.md](models.md#evaluation-plan).
 
 Cases and results are versioned files under `evals/`, not database tables.
 
@@ -50,13 +50,13 @@ Cases and results are versioned files under `evals/`, not database tables.
 
 ### Splits and size
 
-Methodology and reasons are in [ADR 0017](adr/0017-eval-first.md).
+Methodology and reasons are in [ADR 0017](../adr/0017-eval-first.md).
 
 - **Dev:** used freely while building and tuning prompts.
 - **Held-out test:** run only at milestone reviews and for model or prompt decisions.
 - **Regression:** every fixed bug becomes a permanent case.
 
-About 20 test cases per category, about 160 in total, starting from about 10. Every reported rate carries a Wilson 95% confidence interval and its sample size ([ADR 0017 amendment](adr/0017-eval-first.md#amendment-2026-11-27)).
+About 20 test cases per category, about 160 in total, starting from about 10. Every reported rate carries a Wilson 95% confidence interval and its sample size ([ADR 0017 amendment](../adr/0017-eval-first.md#amendment-2026-11-27)).
 
 ### File-agent cases
 
@@ -79,7 +79,7 @@ Report per category, with intervals, and for the whole set. Per-category numbers
 - citation correctness: cited passages exist and actually support the claim;
 - abstention: says "not supported" on no-answer cases, and doesn't on answerable ones;
 - retrieval recall: whether the supporting passage was among those retrieved (separates search failures from reasoning failures);
-- retrieval quality per arm, measured without generation in M1.6: recall@k, MRR, and latency per query, plus index size, build time, VRAM for embedding and reranker models, and hosted cost for contextual retrieval ([ADR 0019](adr/0019-search-architecture.md));
+- retrieval quality per arm, measured without generation in M1.6: recall@k, MRR, and latency per query, plus index size, build time, VRAM for embedding and reranker models, and hosted cost for contextual retrieval ([ADR 0019](../adr/0019-search-architecture.md));
 - clarification: unnecessary-clarification rate outside `underspecified` (target near zero), and resolution rate on `underspecified`;
 - tool selection precision and recall (a diagnostic: a different valid path never fails a case);
 - argument validity and semantic correctness;

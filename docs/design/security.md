@@ -91,11 +91,11 @@ Tests: path traversal, symlink and junction escape, case tricks on Windows paths
 
 ## Sandbox
 
-Candidates and trade-offs are in [research/LOCAL_SANDBOX_OPTIONS.md](research/LOCAL_SANDBOX_OPTIONS.md). A rootless container reduces some risk but proves nothing against hostile code. Selection requires a configuration review and negative tests on the actual host.
+Candidates and trade-offs are in [research/local-sandbox-options.md](../research/local-sandbox-options.md). A rootless container reduces some risk but proves nothing against hostile code. Selection requires a configuration review and negative tests on the actual host.
 
 ## Prompt injection
 
-Any text the model reads can carry instructions: user input, documents, web pages, tool output, MCP metadata. No filter makes that safe. *The Attacker Moves Second* (Nasr, Carlini, Tramèr and others; USENIX Security 2026) took 12 published defences, including detection classifiers, from near-zero attack success in their own papers to over 90% for most under adaptive attacks; human red-teamers beat all of them ([decision audit, A12](research/DECISION_AUDIT_2026-11-27.md#a12-injection-classifier--change-a-signal-not-a-control)).
+Any text the model reads can carry instructions: user input, documents, web pages, tool output, MCP metadata. No filter makes that safe. *The Attacker Moves Second* (Nasr, Carlini, Tramèr and others; USENIX Security 2026) took 12 published defences, including detection classifiers, from near-zero attack success in their own papers to over 90% for most under adaptive attacks; human red-teamers beat all of them ([decision audit, A12](../research/2026-11-27-decision-audit.md#a12-injection-classifier--change-a-signal-not-a-control)).
 
 **What carries the weight** is structure, not detection:
 

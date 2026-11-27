@@ -62,7 +62,7 @@ Each profile names its method. Small local models differ in which method they ha
 
 The router considers: task type and modality, required capabilities, measured quality for that task category, available VRAM and RAM and current load, the deadline, the run budget, local-data policy, and circuit-breaker state.
 
-**No automatic fallback.** A run never switches to another model or provider because a call failed. The failure is retried within the [retry policy](RUNTIME_SPEC.md#retries) and then surfaced, so every result can be traced to the model that produced it, and a quality or cost difference never hides behind a silent switch. Moving private local data to a remote provider always requires an explicit data policy and user configuration. Restricted data never goes to a hosted model.
+**No automatic fallback.** A run never switches to another model or provider because a call failed. The failure is retried within the [retry policy](runtime.md#retries) and then surfaced, so every result can be traced to the model that produced it, and a quality or cost difference never hides behind a silent switch. Moving private local data to a remote provider always requires an explicit data policy and user configuration. Restricted data never goes to a hosted model.
 
 The model can suggest delegation; the router and policy decide whether another model call or child run actually happens. Depth, concurrency, budget, tool scope, and deadline are all enforced. The evaluator model is not ground truth and has to be calibrated against reference labels.
 
@@ -74,15 +74,15 @@ The model can suggest delegation; the router and policy decide whether another m
 | Anthropic API | Optional, hosted | Quality baseline for evals and hard tasks. Paid from a prepaid Console balance with a hard spend limit; a Claude chat subscription doesn't include API access. Default comparison model: the cheapest current Claude model, with larger ones opt-in. |
 | Fake | Tests | Scripted responses and errors; no network |
 
-Every call records input and output tokens, latency, and cost (computed from a configured price table for hosted models; zero for local). Runs enforce token and spend budgets ([runtime spec](RUNTIME_SPEC.md#budgets)). API keys come from the environment and never appear in logs, traces, or the repository.
+Every call records input and output tokens, latency, and cost (computed from a configured price table for hosted models; zero for local). Runs enforce token and spend budgets ([runtime spec](runtime.md#budgets)). API keys come from the environment and never appear in logs, traces, or the repository.
 
 ## Ollama baseline
 
-Windows-hosted Ollama, reached from WSL at `http://127.0.0.1:11434` over mirrored networking ([ADR 0010](adr/0010-windows-hosted-ollama-initial-deployment.md)). The endpoint comes from configuration (`OLLAMA_BASE_URL`) and nothing about Windows networking is hard-coded.
+Windows-hosted Ollama, reached from WSL at `http://127.0.0.1:11434` over mirrored networking ([ADR 0010](../adr/0010-windows-hosted-ollama-initial-deployment.md)). The endpoint comes from configuration (`OLLAMA_BASE_URL`) and nothing about Windows networking is hard-coded.
 
 Capabilities to verify against each exact model tag and Ollama version: text generation and streaming, tool calls including malformed arguments, how parallel tool calls are represented, JSON-schema output, resource use and latency, and behaviour on timeout and server restart.
 
-**Current candidates.** Numbers and caveats are in the [benchmark record](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md).
+**Current candidates.** Numbers and caveats are in the [benchmark record](../research/2026-11-25-ollama-model-benchmarks.md).
 
 | Model | Role under evaluation |
 |---|---|
@@ -130,6 +130,6 @@ Choose the smallest, fastest model that meets the measured quality and safety ba
 | Option | Consider when |
 |---|---|
 | llama.cpp | Finer control over GGUF quantisation or CPU/GPU placement |
-| vLLM | More than one concurrent user. M3 runs the same load test on Ollama and vLLM behind the adapter, and adopts vLLM if Ollama's throughput is the bottleneck ([decision audit, A5](research/DECISION_AUDIT_2026-11-27.md#a5-ollama-until-m7--amend)). Caveats on this host: 6 GB of VRAM, and vLLM favours AWQ or GPTQ weights over GGUF, so the model files and their digests differ from Ollama's. |
+| vLLM | More than one concurrent user. M3 runs the same load test on Ollama and vLLM behind the adapter, and adopts vLLM if Ollama's throughput is the bottleneck ([decision audit, A5](../research/2026-11-27-decision-audit.md#a5-ollama-until-m7--amend)). Caveats on this host: 6 GB of VRAM, and vLLM favours AWQ or GPTQ weights over GGUF, so the model files and their digests differ from Ollama's. |
 | Hosted providers | Quality comparison, or tasks beyond local capability. Always optional. |
 | LiteLLM | Enough providers that routing and fallback become a burden in our own adapters |

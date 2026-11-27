@@ -6,7 +6,7 @@
 
 ## Context
 
-Answers are only as good as the passages behind them. ADR 0011 planned full-text search alone, adding embeddings only after a failure. Since then, three findings changed that ([decision audit](../research/DECISION_AUDIT_2026-11-27.md) A6–A8, A19, A20):
+Answers are only as good as the passages behind them. ADR 0011 planned full-text search alone, adding embeddings only after a failure. Since then, three findings changed that ([decision audit](../research/2026-11-27-decision-audit.md) A6–A8, A19, A20):
 
 - **Two stages is the common production shape:** retrieve about 50 candidates, then rerank them with a cross-encoder. On BEIR, re-ranking gave the best zero-shot results, and BM25 candidates served a reranker as well as dense ones did.
 - **pg_textsearch** brings BM25 to PostgreSQL (1.0 in March 2026, now in Cloud SQL and AlloyDB). It supports PostgreSQL 17 and 18.
@@ -43,7 +43,7 @@ Reranker candidates: `bge-reranker-v2-m3` and Qwen3-Reranker-0.6B. Each stage ca
 - PostgreSQL moves into milestone 1, so M1.6 adds Docker Compose and a migration tool earlier than planned.
 - The staged comparison costs several index builds. Retrieval-only metrics keep each one cheap: no model generates an answer.
 - Contextual retrieval spends hosted tokens at index time, under the hosted spend limit. Each note is stored with its passage, along with the model and prompt version that wrote it, so lineage covers it ([ADR 0020](0020-data-and-model-governance.md)). Private and restricted files never get hosted notes.
-- Embedding models and rerankers become registry entries with licences and digests ([model spec](../MODEL_SPEC.md#model-registry-licences-and-pinning)).
+- Embedding models and rerankers become registry entries with licences and digests ([model spec](../design/models.md#model-registry-licences-and-pinning)).
 - Ollama lowercases nomic-embed-text input, so the eval includes cases that depend on exact part and model numbers. BM25 still matches those exactly.
 - pg_textsearch needs `shared_preload_libraries`, so a managed target must offer it. Cloud SQL and AlloyDB do; others need checking.
 

@@ -16,7 +16,7 @@ Companies review every change through pull requests with automated checks. The o
 - A PR description states the objective, design and alternatives, files changed, commands run with their actual output, and the next step.
 - Commits use the owner's GitHub noreply address, not a personal email.
 - Licence: Apache-2.0.
-- **Two working copies.** The owner works in a clone on WSL ext4 (fast, and the only place Ollama is reachable). The assistant works in the Windows-side folder it can access, and runs unit tests on a scratch copy on its own disk. The owner's clone fetches the assistant's branches from that folder as a git remote named `assistant`, runs integration tests and evals, pushes to GitHub, and opens the PR. Measurements behind this are in the [environment baseline](../research/ENVIRONMENT_BASELINE_2026-11-25.md).
+- **Two working copies.** The owner works in a clone on WSL ext4 (fast, and the only place Ollama is reachable). The assistant works in the Windows-side folder it can access, and runs unit tests on a scratch copy on its own disk. The owner's clone fetches the assistant's branches from that folder as a git remote named `assistant`, runs integration tests and evals, pushes to GitHub, and opens the PR. Measurements behind this are in the [environment baseline](../research/2026-11-25-environment-baseline.md).
 
 ## Consequences
 

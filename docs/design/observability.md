@@ -1,12 +1,12 @@
 # Observability, Audit, and Retention
 
-**Status:** Accepted 2026-11-27. Logs and traces start in M1.2, chained audit records in M1.5, the trace viewer in M2.3. Decisions come from the [decision audit](research/DECISION_AUDIT_2026-11-27.md) (A13, A14, A15).
+**Status:** Accepted 2026-11-27. Logs and traces start in M1.2, chained audit records in M1.5, the trace viewer in M2.3. Decisions come from the [decision audit](../research/2026-11-27-decision-audit.md) (A13, A14, A15).
 
 Four separate records, each with its own job:
 
 | Record | Answers | Authoritative? |
 |---|---|---|
-| Run events and step records | What did this run do, in order? | Yes, for runs ([data model](DATA_MODEL.md#runs-and-events)) |
+| Run events and step records | What did this run do, in order? | Yes, for runs ([data model](data-model.md#runs-and-events)) |
 | Audit events | Who was allowed or denied what, and can we show it wasn't altered? | Yes, for security facts |
 | Traces | Where did the time go, and what did each model and tool call see? | No: diagnostic, sampled later, expires |
 | Logs and metrics | What is the process doing, and is it healthy? | No: diagnostic, expires |
@@ -57,7 +57,7 @@ The choice and its measurements go in an ADR. Until M2.3, traces can be printed 
 
 **Record:** sequence number, timestamp, actor (user or system component), action, target, outcome, run and step IDs where relevant, a payload digest, the previous record's hash, and this record's hash.
 
-**Protections, in order of value** ([audit A13](research/DECISION_AUDIT_2026-11-27.md#a13-hash-chained-audit-trail--keep-rescope)):
+**Protections, in order of value** ([audit A13](../research/2026-11-27-decision-audit.md#a13-hash-chained-audit-trail--keep-rescope)):
 
 1. **Append-only.** From M2.1, an `audit_events` table where the application's database role has `INSERT` and `SELECT` only. No code path updates or deletes a record; retention deletion runs under a separate role.
 2. **Hash chain.** Each record's hash covers its canonical serialisation (sorted keys, UTF-8 bytes, fixed number and timestamp formats) plus the previous hash. A verifier recomputes the chain and reports the first break. The chain is a pure domain function, tested with Hypothesis: any modification, deletion, insertion, or reordering is detected.
@@ -74,13 +74,13 @@ Defaults; every value is configurable.
 | Data | Default | Basis |
 |---|---|---|
 | Audit events | At least 12 months, the latest 3 months searchable; not deletable by the application role | PCI DSS v4.0.1 10.5.1, a common baseline outside payments too |
-| Run events and step records | Kept with the run; deleting a run keeps its audit facts | [Data model](DATA_MODEL.md#retention) |
+| Run events and step records | Kept with the run; deleting a run keeps its audit facts | [Data model](data-model.md#retention) |
 | Messages | 90 days | Owner decision, 2026-11-27 |
 | Debug payload capture | Off; 7 days when on | Owner decision, 2026-11-27 |
 | Traces | 30 days | Owner decision, 2026-11-27 |
 | Application logs | 14 days | Owner decision, 2026-11-27 |
 | Artifacts | Until deleted by the owner; per-user quota | Owner decision, 2026-11-27 |
-| Eval results | Public set in Git indefinitely; private set in `evals/private/` until the owner deletes it | [ADR 0017](adr/0017-eval-first.md) |
+| Eval results | Public set in Git indefinitely; private set in `evals/private/` until the owner deletes it | [ADR 0017](../adr/0017-eval-first.md) |
 
 A retention job is itself audited: what it deleted, by count and time range, never by content.
 

@@ -31,7 +31,7 @@ The runtime and run state machine, policy outside the model, provider adapters, 
 
 Two cheap choices keep this path open:
 
-- **Documents carry `language` and `classification` fields from milestone 1** ([data model](../DATA_MODEL.md)). Adding them later would mean re-indexing and rewriting policy.
-- **Policy may deny a tool result by classification** ([security spec](../SECURITY_SPEC.md#file-access)), for example keeping `restricted` documents away from a hosted model.
+- **Documents carry `language` and `classification` fields from milestone 1** ([data model](../design/data-model.md)). Adding them later would mean re-indexing and rewriting policy.
+- **Policy may deny a tool result by classification** ([security spec](../design/security.md#file-access)), for example keeping `restricted` documents away from a hosted model.
 
 Everything else waits for milestone 7.

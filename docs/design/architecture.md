@@ -18,25 +18,25 @@ A Python modular monolith with explicit adapter boundaries. The boxes below are 
 
 **CLI.** The first client. In milestone 1 it calls the runtime directly; from milestone 2 it is an API client like any other.
 
-**API / control plane.** Request validation, run creation and queries, approval and cancellation commands, event streaming over SSE, quotas. FastAPI. No reasoning logic, no user code. See [API_SPEC.md](API_SPEC.md).
+**API / control plane.** Request validation, run creation and queries, approval and cancellation commands, event streaming over SSE, quotas. FastAPI. No reasoning logic, no user code. See [api.md](api.md).
 
 **Run manager.** Creates runs, binds each to an agent configuration version, enforces lifecycle transitions, and coordinates persistence. A thread (conversation) can contain many runs.
 
-**Agent runtime.** The bounded model ↔ tool loop. See [RUNTIME_SPEC.md](RUNTIME_SPEC.md).
+**Agent runtime.** The bounded model ↔ tool loop. See [runtime.md](runtime.md).
 
 **Context manager.** Builds each model request from stored history under a token budget: selects, summarises, retrieves, or drops messages. It is not the store of record. Compaction keeps provenance and never silently drops hard constraints.
 
-**Model gateway.** Maps a logical profile to a provider adapter. Owns capability checks, timeouts, safe retries, and usage accounting. No automatic fallback between models or providers. See [MODEL_SPEC.md](MODEL_SPEC.md).
+**Model gateway.** Maps a logical profile to a provider adapter. Owns capability checks, timeouts, safe retries, and usage accounting. No automatic fallback between models or providers. See [models.md](models.md).
 
-**Orchestrator.** Validates plans (as data), schedules ready nodes under concurrency and budget limits, and handles failure and cancellation. Executes registered operations only. See [RUNTIME_SPEC.md](RUNTIME_SPEC.md#orchestration).
+**Orchestrator.** Validates plans (as data), schedules ready nodes under concurrency and budget limits, and handles failure and cancellation. Executes registered operations only. See [runtime.md](runtime.md#orchestration).
 
-**Tool registry and dispatcher.** The registry holds trusted definitions; the dispatcher validates arguments, checks policy, executes with timeouts, normalises output, and records the invocation. Native and MCP tools share this path. See [TOOL_SPEC.md](TOOL_SPEC.md).
+**Tool registry and dispatcher.** The registry holds trusted definitions; the dispatcher validates arguments, checks policy, executes with timeouts, normalises output, and records the invocation. Native and MCP tools share this path. See [tools.md](tools.md).
 
 **Policy engine.** Decides allow, deny, or require-approval from identity, granted scopes, tool risk, and resource limits. A model's claim that something is safe counts for nothing.
 
-**Execution broker.** A separate process boundary for filesystem, shell, browser, and code. Accepts structured, policy-checked requests and runs them in restricted workers. The sandbox backend is open. See [SECURITY_SPEC.md](SECURITY_SPEC.md).
+**Execution broker.** A separate process boundary for filesystem, shell, browser, and code. Accepts structured, policy-checked requests and runs them in restricted workers. The sandbox backend is open. See [security.md](security.md).
 
-**Persistence.** PostgreSQL holds agent versions, threads, messages, runs, steps, tool invocations, approvals, and an append-only run event history. That history supports audit and replay to clients; it does not make the system event-sourced. See [DATA_MODEL.md](DATA_MODEL.md).
+**Persistence.** PostgreSQL holds agent versions, threads, messages, runs, steps, tool invocations, approvals, and an append-only run event history. That history supports audit and replay to clients; it does not make the system event-sourced. See [data-model.md](data-model.md).
 
 **Observability.** See [below](#observability).
 
@@ -111,7 +111,7 @@ sequenceDiagram
 
 ## Dependency rules
 
-- `domain` imports only the standard library and Pydantic ([ADR 0016](adr/0016-pydantic-domain-types.md)): no web framework, ORM, provider SDK, MCP SDK, or Temporal code.
+- `domain` imports only the standard library and Pydantic ([ADR 0016](../adr/0016-pydantic-domain-types.md)): no web framework, ORM, provider SDK, MCP SDK, or Temporal code.
 - `application` defines use cases and ports; infrastructure implements the ports.
 - `runtime` reaches models through model ports and tools through the dispatcher port.
 - `orchestration` is deterministic for a given plan, state, and input. Plan validation never calls a model.
@@ -137,7 +137,7 @@ Directories are modules in one package, not separate services or distributions.
 
 ## Deployment
 
-Portable by design ([ADR 0012](adr/0012-portable-deployment.md)): containers, configuration from the environment, no state in app processes, health and readiness endpoints, logs to stdout. The same stack runs on the laptop or any Linux host; only configuration differs.
+Portable by design ([ADR 0012](../adr/0012-portable-deployment.md)): containers, configuration from the environment, no state in app processes, health and readiness endpoints, logs to stdout. The same stack runs on the laptop or any Linux host; only configuration differs.
 
 - **Milestone 1:** the CLI calls the runtime in-process. Ollama, or an optional hosted API, is reached at a configured endpoint.
 - **Milestone 2 onward:** one Python service (API and runtime), PostgreSQL, and an optional telemetry profile, started with Docker Compose. The CLI becomes an API client.
@@ -145,7 +145,7 @@ Portable by design ([ADR 0012](adr/0012-portable-deployment.md)): containers, co
 
 ## Observability
 
-Four separate records: run events and step records (the truth about runs), audit events (hash-chained security facts), traces (OpenTelemetry, with GenAI conventions), and structured logs and metrics. Metadata and digests by default, never raw content. An LLM trace viewer arrives in M2.3. Details, including retention, are in [OBSERVABILITY_SPEC.md](OBSERVABILITY_SPEC.md).
+Four separate records: run events and step records (the truth about runs), audit events (hash-chained security facts), traces (OpenTelemetry, with GenAI conventions), and structured logs and metrics. Metadata and digests by default, never raw content. An LLM trace viewer arrives in M2.3. Details, including retention, are in [observability.md](observability.md).
 
 ## Deferred choices
 

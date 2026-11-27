@@ -21,7 +21,7 @@ Filesystem, shell, browser, and code tools are far more powerful than ordinary A
 
 These layers combine. A hardened worker might use namespaces, seccomp, Landlock, and cgroups inside a container or VM.
 
-On this host, WSL2 has user namespaces and cgroup v2. `/dev/kvm` exists but the user can't access it yet ([environment baseline](ENVIRONMENT_BASELINE_2026-11-25.md)).
+On this host, WSL2 has user namespaces and cgroup v2. `/dev/kvm` exists but the user can't access it yet ([environment baseline](2026-11-25-environment-baseline.md)).
 
 ## Broker requirements
 

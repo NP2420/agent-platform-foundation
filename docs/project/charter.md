@@ -15,7 +15,7 @@ Production-grade means four things. The system is **evaluated** (versioned test 
 3. Organise files (rename, move, tag), with approval and undo.
 4. Run code on files, in a sandbox.
 
-The use case was chosen because it is useful, safe to start, and exercises retrieval, provenance, abstention, and permissions. Running it locally also has a real benefit: private files never leave the machine. See [ADR 0011](adr/0011-file-agent-reference-use-case.md).
+The use case was chosen because it is useful, safe to start, and exercises retrieval, provenance, abstention, and permissions. Running it locally also has a real benefit: private files never leave the machine. See [ADR 0011](../adr/0011-file-agent-reference-use-case.md).
 
 Two corpora: public documents (this repository's docs and the PostgreSQL manual) for committed evaluation sets, and the owner's personal folders for private evaluation that is never committed.
 
@@ -47,15 +47,15 @@ Two corpora: public documents (this repository's docs and the PostgreSQL manual)
 | Area | Direction | Status |
 |---|---|---|
 | Purpose | Practise production-grade AI engineering | Accepted |
-| Use case | File agent, read-only first ([ADR 0011](adr/0011-file-agent-reference-use-case.md)) | Accepted |
-| Deployment | Self-hosted, portable, cloud-ready shape ([ADR 0012](adr/0012-portable-deployment.md)) | Accepted |
+| Use case | File agent, read-only first ([ADR 0011](../adr/0011-file-agent-reference-use-case.md)) | Accepted |
+| Deployment | Self-hosted, portable, cloud-ready shape ([ADR 0012](../adr/0012-portable-deployment.md)) | Accepted |
 | Models | Ollama default; hosted API optional, with a hard spend limit | Accepted |
 | Users | Identity on every run now; local accounts in milestone 3 | Accepted |
 | File access | Allowlist; sensitive paths always blocked | Accepted |
 | Interface | CLI, then API; web UI after multi-user | Accepted |
 | Runtime language | Python | Accepted |
-| Database | PostgreSQL 18 ([ADR 0019](adr/0019-search-architecture.md)) | Accepted |
-| Workflow | Branches, PRs, CI; assistant writes, owner reviews and merges ([ADR 0013](adr/0013-pull-request-workflow.md)) | Accepted |
+| Database | PostgreSQL 18 ([ADR 0019](../adr/0019-search-architecture.md)) | Accepted |
+| Workflow | Branches, PRs, CI; assistant writes, owner reviews and merges ([ADR 0013](../adr/0013-pull-request-workflow.md)) | Accepted |
 | Licence | Apache-2.0 | Accepted |
 
 ## Definition of success: milestone 1
@@ -66,11 +66,11 @@ One narrow path, end to end, measured:
 - it runs through the real runtime: run state machine, model adapter, tool registry, policy check;
 - a read-only search tool scoped to one approved folder finds the relevant passages;
 - the answer cites file and section, or says the documents don't support an answer;
-- an evaluation set of about 160 cases in eight categories (drafted by the assistant, verified by the owner) reports answer accuracy, citation correctness, abstention, and clarification behaviour ([ADR 0017](adr/0017-eval-first.md#amendment-2026-11-27));
+- an evaluation set of about 160 cases in eight categories (drafted by the assistant, verified by the owner) reports answer accuracy, citation correctness, abstention, and clarification behaviour ([ADR 0017](../adr/0017-eval-first.md#amendment-2026-11-27));
 - the same set is run on a local model and a hosted model, with cost and latency for each;
 - all of it is deterministic-testable with fake adapters.
 
-Later milestones are in the [roadmap](DEVELOPMENT_ROADMAP.md).
+Later milestones are in the [roadmap](roadmap.md).
 
 ## Quality attributes
 
@@ -88,6 +88,6 @@ Numeric targets are set after the first measured baseline, in `docs/SERVICE_OBJE
 
 ## Constraints
 
-- Development hardware is a laptop with a 6 GB GPU ([environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md)). Local models are small; hosted models fill the quality gap where allowed.
+- Development hardware is a laptop with a 6 GB GPU ([environment baseline](../research/2026-11-25-environment-baseline.md)). Local models are small; hosted models fill the quality gap where allowed.
 - Hosted API use is paid separately from any Claude chat subscription, through a prepaid Console balance with a hard limit.
 - The repository is public. Personal files, personal evaluation cases, secrets, and model weights never enter it.
