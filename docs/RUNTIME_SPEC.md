@@ -105,7 +105,7 @@ Only the transient classes above are retried: rate limits, transient provider er
 
 Per run: wall-clock time, model calls, tool calls, tool concurrency, tokens where measurable, clarifying questions, delegation depth, per-tool timeout, external calls, and output size. Accounting is monotonic and correct under concurrency. The model cannot raise its own budget.
 
-**Defaults.** Until the M1.6 baseline exists, defaults are provisional and generous, and reaching one is logged as a finding. After the baseline, each default is set to about twice the measured p99 for the eval set, and revisited when the workload changes. A budget that real runs never approach catches nothing; one set at the median fails healthy runs.
+**Defaults.** Until the M1.7 baseline exists, defaults are provisional and generous, and reaching one is logged as a finding. After the baseline, each default is set to about twice the measured p99 for the eval set, and revisited when the workload changes. A budget that real runs never approach catches nothing; one set at the median fails healthy runs.
 
 ## Cancellation
 

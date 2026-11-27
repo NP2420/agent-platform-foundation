@@ -57,9 +57,10 @@ Read before the phase starts. Chapter numbers are approximate; check them agains
 | M1.2 Domain types, state machine | [*Architecture Patterns with Python*, ch. 1: Domain Modeling](https://www.cosmicpython.com/book/chapter_01_domain_model.html); Pydantic [strict mode](https://pydantic.dev/docs/validation/latest/concepts/strict_mode/) and [models](https://pydantic.dev/docs/validation/latest/concepts/models/) (frozen models); Hypothesis [stateful testing](https://hypothesis.readthedocs.io/en/latest/stateful.html) |
 | M1.3 Evals | AI Engineering 3–4; Inspect AI and promptfoo docs; confidence intervals for proportions |
 | M1.4 Model adapters | AI Engineering 5, 9; Ollama and Anthropic API docs on tool use and structured output |
-| M1.5 Threat model, tools, search | OWASP Top 10 for LLM Applications; STRIDE threat modelling; PostgreSQL full-text search chapter; Anthropic tools article |
-| M1.6–M1.7 Pipeline, agent loop | AI Engineering 6; Anthropic *Building effective agents* |
-| M1.8 Comparison, feedback | AI Engineering 8, 10; published model and system cards |
+| M1.5 Threat model, tools, policy | OWASP Top 10 for LLM Applications; STRIDE threat modelling; Anthropic tools article |
+| M1.6 Corpus and search | BEIR paper (Thakur et al., 2021); pg_textsearch and pgvector docs; *A Systematic Analysis of Chunking Strategies* (arXiv 2601.14123) |
+| M1.7–M1.8 Pipeline, agent loop | AI Engineering 6; Anthropic *Building effective agents* |
+| M1.9 Comparison, feedback | AI Engineering 8, 10; published model and system cards |
 | M2.1 Persistence | DDIA 3–5, 8–10; PostgreSQL and SQLAlchemy docs |
 | M2.2–M2.3 API, tracing | SSE spec; OpenTelemetry docs; SRE monitoring chapters |
 | M3.1–M3.2 Identity, approvals | OWASP authentication and session cheat sheets; Secure & Reliable Systems |

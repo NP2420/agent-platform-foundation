@@ -10,11 +10,11 @@ One file per material decision. An ADR is never edited to reverse a decision: wr
 | [0004](0004-model-provider-abstraction.md) | Provider-neutral model gateway, Ollama first | Accepted |
 | [0005](0005-native-tools-and-mcp.md) | One tool contract for native and MCP tools | Accepted |
 | [0006](0006-in-process-before-temporal.md) | In-process orchestrator before Temporal | Superseded by 0018 |
-| [0007](0007-postgresql-system-of-record.md) | PostgreSQL as system of record | Accepted; version and driver open |
+| [0007](0007-postgresql-system-of-record.md) | PostgreSQL as system of record | Accepted; version and driver set by 0019 |
 | [0008](0008-execution-isolation-boundary.md) | Separate execution broker for powerful capabilities | Accepted; sandbox open |
 | [0009](0009-local-first-self-hosted.md) | Local-first, self-hosted | Accepted |
 | [0010](0010-windows-hosted-ollama-initial-deployment.md) | Windows-hosted Ollama via WSL mirrored networking | Accepted for development |
-| [0011](0011-file-agent-reference-use-case.md) | File agent as the reference use case | Accepted |
+| [0011](0011-file-agent-reference-use-case.md) | File agent as the reference use case | Accepted; corpus superseded by 0020, retrieval by 0019 |
 | [0012](0012-portable-deployment.md) | Portable, cloud-ready deployment shape | Accepted |
 | [0013](0013-pull-request-workflow.md) | Branches, pull requests, and CI | Accepted |
 | [0014](0014-python-toolchain.md) | Python 3.15, uv, Ruff, pytest, CI | Accepted; type checker superseded by 0015 |
@@ -22,6 +22,8 @@ One file per material decision. An ADR is never edited to reverse a decision: wr
 | [0016](0016-pydantic-domain-types.md) | Pydantic for domain types | Accepted |
 | [0017](0017-eval-first.md) | Eval-first development and eval methodology | Accepted |
 | [0018](0018-durable-execution-decided-in-m2.md) | Durable execution, decided by experiment in M2.1 | Accepted |
+| [0019](0019-search-architecture.md) | Search architecture: PostgreSQL 18, staged retrieval arms | Accepted |
+| [0020](0020-data-and-model-governance.md) | Data and model governance | Accepted |
 
 ## Writing one
 

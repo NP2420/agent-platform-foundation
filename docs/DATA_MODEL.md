@@ -1,6 +1,6 @@
 # Data Model
 
-**Status:** PostgreSQL is accepted as the system of record. Tables and columns are conceptual until M2.1. The major version and driver are open ([research note](research/POSTGRES_18_VS_19.md)).
+**Status:** PostgreSQL 18 is accepted as the system of record, with psycopg 3. The search tables arrive in M1.6 ([ADR 0019](adr/0019-search-architecture.md)); the rest are conceptual until M2.1.
 
 ## Principles
 
@@ -30,8 +30,8 @@
 | `artifacts` | Metadata for files produced by runs (bytes stored elsewhere) |
 | `audit_events` | Hash-chained security facts; the application role can only insert and select ([observability spec](OBSERVABILITY_SPEC.md#audit-trail)) |
 | `users`, `folder_grants` | Accounts and per-user approved folders (milestone 3; a single local principal before that) |
-| `documents` | Indexed file: owner, path, size, modification time, content hash, version where known, `language` (detected, BCP 47), `classification` (`public`, `internal`, `restricted`) |
-| `passages` | Searchable chunk of a document with section and line range, and a full-text index |
+| `documents` | Indexed file: owner, path, size, modification time, content hash, document version, applicability (equipment model, revision, date; or product version), source and licence for corpus files, `language` (detected, BCP 47), `classification` (`public`, `internal`, `restricted`) ([ADR 0020](adr/0020-data-and-model-governance.md)) |
+| `passages` | Searchable chunk of a document: section path, page, line range, token count, an optional context note with the model and prompt version that wrote it (contextual retrieval, [ADR 0019](adr/0019-search-architecture.md)), a BM25 index (pg_textsearch), and one vector column per registered embedding model (pgvector, HNSW) |
 
 Every record that belongs to someone carries the owning principal from the start, so adding accounts in milestone 3 needs no migration of meaning. No organisation or tenant tables beyond that.
 

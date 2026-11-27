@@ -6,19 +6,18 @@ Dated findings that shaped decisions. Each entry is short and links to the resea
 
 | ID | Question | Evidence needed | Where |
 |---|---|---|---|
-| R-003 | PostgreSQL 18 or 19? | Compatibility plus workload benchmark | M2.1 |
-| R-004 | psycopg 3 or asyncpg? | Compatibility, migrations, concurrency | M2.1 |
-| R-005 | Which local models, for which profiles? | Versioned tool-use suite, context scaling, resource use | M1.8 |
+| R-004 | Keep psycopg 3, or switch to asyncpg? | Compatibility, migrations, concurrency benchmark | M2.1 |
+| R-005 | Which local models, for which profiles? | Versioned tool-use suite, context scaling, resource use | M1.9 |
 | R-006 | Which sandbox backend? | Threat model and negative tests on a Linux host | M5.1 |
 | R-007 | Which MCP SDK and protocol revision? | Release notes, migration guide, contract test | M4.4 |
 | R-008 | Which durable execution mechanism: our own step log, DBOS, or Temporal? | Failure-injection experiment ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)) | M2.1 |
 | R-009 | Do tiered models beat one model? | Same cases and hardware, cost vs quality | Later |
 | R-010 | Which trace viewer: Langfuse or Phoenix? | Same traces in each; readability, eval linking, measured resource cost | M2.3 |
-| R-011 | Is full-text search enough, or are embeddings needed? | Milestone 1 eval: retrieval misses by cause | M1.8 |
-| R-012 | Which model backs the default profile? | Milestone 1 eval: local vs hosted accuracy, cost, latency | M1.8 |
-| R-013 | Does an agent loop beat a fixed pipeline, and which tool-call method works on small models? | Four-way comparison on the same eval set | M1.8 |
+| R-011 | Which retrieval arm wins: keyword, hybrid, with or without a reranker? | Staged retrieval-only eval ([ADR 0019](adr/0019-search-architecture.md)) | M1.6 |
+| R-012 | Which model backs the default profile? | Milestone 1 eval: local vs hosted accuracy, cost, latency | M1.9 |
+| R-013 | Does an agent loop beat a fixed pipeline, and which tool-call method works on small models? | Four-way comparison on the same eval set | M1.9 |
 
-Closed: R-001 (host environment), 2026-11-25. R-002 (Python 3.15), 2026-11-26.
+Closed: R-001 (host environment), 2026-11-25. R-002 (Python 3.15), 2026-11-26. R-003 (PostgreSQL 18), 2026-11-27.
 
 ## Entries
 
@@ -85,4 +84,4 @@ interpretation, decision or status, revisit trigger. Link the note or ADR.
 
 ### 2026-11-27: Decision audit
 
-Checked decisions 1–91 against vendor docs, papers, and production practice. 20 findings; the owner accepted every proposed change. The largest: durable execution decided by experiment in M2.1 ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)), PostgreSQL 18 now (pg_textsearch supports 17 and 18), a reranker arm in retrieval, the injection classifier demoted to telemetry, a trace viewer in M2, and one page of service objectives after the M1.6 baseline. → [audit](research/DECISION_AUDIT_2026-11-27.md)
+Checked decisions 1–91 against vendor docs, papers, and production practice. 20 findings; the owner accepted every proposed change. The largest: durable execution decided by experiment in M2.1 ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)), PostgreSQL 18 now (pg_textsearch supports 17 and 18), a reranker arm in retrieval, the injection classifier demoted to telemetry, a trace viewer in M2, and one page of service objectives after the fixed-pipeline baseline (M1.7 after the phase split in [ADR 0019](adr/0019-search-architecture.md)). → [audit](research/DECISION_AUDIT_2026-11-27.md)

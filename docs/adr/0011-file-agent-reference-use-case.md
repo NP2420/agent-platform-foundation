@@ -1,6 +1,6 @@
 # ADR 0011: File Agent as the Reference Use Case
 
-- **Status:** Accepted
+- **Status:** Accepted; the corpus list is superseded by [ADR 0020](0020-data-and-model-governance.md) and the retrieval line by [ADR 0019](0019-search-architecture.md)
 - **Date:** 2026-11-26
 
 ## Context
@@ -27,7 +27,7 @@ Retrieval starts as full-text search. Embeddings are added only if the milestone
 
 ## Consequences
 
-- M1.5's first real tool is file search, with path-scope tests from the start.
+- The first real tools are file read (M1.5) and file search (M1.6), with path-scope tests from the start.
 - The evaluation spec gains citation-correctness and abstention metrics.
 - Documents carry a path, a modification time, and, where known, a version.
 - Write and execute capabilities each need their own milestone and security gate.

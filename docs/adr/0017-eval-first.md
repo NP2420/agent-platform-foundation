@@ -9,7 +9,7 @@ Milestone 1 originally built the whole system and measured it in its last phase.
 
 ## Decision
 
-**Order.** The eval harness and first cases (M1.3) come right after the domain types (M1.2), before any model or retrieval code. A fixed retrieve-then-answer pipeline (M1.6) is built before the agent loop (M1.7), as the baseline the agent must beat. Both are run with two tool-call methods, native tool calling and schema-constrained JSON, and with local and hosted models.
+**Order.** The eval harness and first cases (M1.3) come right after the domain types (M1.2), before any model or retrieval code. A fixed retrieve-then-answer pipeline (M1.7) is built before the agent loop (M1.8), as the baseline the agent must beat. Both are run with two tool-call methods, native tool calling and schema-constrained JSON, and with local and hosted models.
 
 **Splits.**
 
