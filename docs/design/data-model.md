@@ -1,6 +1,6 @@
 # Data Model
 
-**Status:** PostgreSQL 18 is accepted as the system of record, with psycopg 3. The search tables arrive in M1.6 ([ADR 0019](adr/0019-search-architecture.md)); the rest are conceptual until M2.1.
+**Status:** PostgreSQL 18 is accepted as the system of record, with psycopg 3. The search tables arrive in M1.6 ([ADR 0019](../adr/0019-search-architecture.md)); the rest are conceptual until M2.1.
 
 ## Principles
 
@@ -28,11 +28,11 @@
 | `tool_invocations` | Intent, attempt, result, and outcome state |
 | `approvals` | A request and decision tied to one exact action |
 | `artifacts` | Metadata for files produced by runs (bytes stored elsewhere) |
-| `audit_events` | Hash-chained security facts; the application role can only insert and select ([observability spec](OBSERVABILITY_SPEC.md#audit-trail)) |
+| `audit_events` | Hash-chained security facts; the application role can only insert and select ([observability spec](observability.md#audit-trail)) |
 | `users`, `folder_grants` | Accounts (Argon2id password hash with its parameters) and per-user approved folders (milestone 3; a single local principal before that) |
-| `api_tokens`, `sessions` | Hashed scoped tokens with expiry and revocation; server-side sessions (milestone 3, [security spec](SECURITY_SPEC.md#identity-m31)) |
-| `documents` | Indexed file: owner, path, size, modification time, content hash, document version, applicability (equipment model, revision, date; or product version), source and licence for corpus files, `language` (detected, BCP 47), `classification` (`public`, `internal`, `restricted`) ([ADR 0020](adr/0020-data-and-model-governance.md)) |
-| `passages` | Searchable chunk of a document: section path, page, line range, token count, an optional context note with the model and prompt version that wrote it (contextual retrieval, [ADR 0019](adr/0019-search-architecture.md)), a BM25 index (pg_textsearch), and one vector column per registered embedding model (pgvector, HNSW) |
+| `api_tokens`, `sessions` | Hashed scoped tokens with expiry and revocation; server-side sessions (milestone 3, [security spec](security.md#identity-m31)) |
+| `documents` | Indexed file: owner, path, size, modification time, content hash, document version, applicability (equipment model, revision, date; or product version), source and licence for corpus files, `language` (detected, BCP 47), `classification` (`public`, `internal`, `restricted`) ([ADR 0020](../adr/0020-data-and-model-governance.md)) |
+| `passages` | Searchable chunk of a document: section path, page, line range, token count, an optional context note with the model and prompt version that wrote it (contextual retrieval, [ADR 0019](../adr/0019-search-architecture.md)), a BM25 index (pg_textsearch), and one vector column per registered embedding model (pgvector, HNSW) |
 
 Every record that belongs to someone carries the owning principal from the start, so adding accounts in milestone 3 needs no migration of meaning. From M3.1, row-level security on every owned table enforces it in the database as well as in code. No organisation or tenant tables beyond that.
 
@@ -81,4 +81,4 @@ PostgreSQL stores the metadata: owner, run, path or object key, media type, size
 
 ## Retention
 
-Retention is defined separately for messages, raw model and tool payloads, audit events, traces, and artifacts; the defaults are in the [observability spec](OBSERVABILITY_SPEC.md#retention). Deletion and redaction keep required audit facts without keeping sensitive content. Raw prompts and tool output are not stored by default when metadata or digests are enough.
+Retention is defined separately for messages, raw model and tool payloads, audit events, traces, and artifacts; the defaults are in the [observability spec](observability.md#retention). Deletion and redaction keep required audit facts without keeping sensitive content. Raw prompts and tool output are not stored by default when metadata or digests are enough.

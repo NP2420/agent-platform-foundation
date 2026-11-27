@@ -1,0 +1,82 @@
+name: links
+
+# Two link checks over the Markdown docs:
+# - `links` runs on every PR, offline: relative file links and #anchors only.
+#   It is fast and deterministic, so it can be a required check.
+# - `external` runs weekly against the web. Outside sites go down and rate-limit,
+#   so it never blocks a PR; it opens (or updates) one issue instead.
+on:
+  pull_request:
+  push:
+    branches: [master]
+  schedule:
+    - cron: "17 4 * * 1" # Mondays 04:17 UTC
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: links-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  links:
+    name: links
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read # check out the docs
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          lycheeVersion: v0.24.2
+          args: >-
+            --offline
+            --include-fragments
+            --no-progress
+            './**/*.md'
+
+  external:
+    name: external links
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # check out the docs
+      issues: write # open or update the broken-links issue
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: lychee
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          lycheeVersion: v0.24.2
+          fail: false
+          output: lychee/out.md
+          args: >-
+            --include-fragments
+            --no-progress
+            --max-retries 3
+            --accept 200..=299,429
+            './**/*.md'
+
+      - name: Open or update the broken-links issue
+        if: steps.lychee.outputs.exit_code != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: Broken external links in docs
+        run: |
+          existing=$(gh issue list --state open --search "in:title \"$TITLE\"" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file lychee/out.md
+          else
+            gh issue create --title "$TITLE" --body-file lychee/out.md
+          fi

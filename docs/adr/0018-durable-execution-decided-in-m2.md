@@ -9,7 +9,7 @@
 ADR 0006 treated durability as a later, Temporal-sized decision. Two things have changed.
 
 - **Our own design.** Runs pause in `WAITING_APPROVAL` and `WAITING_INPUT` until a person answers, which may take hours. A process restart during that wait must not lose the run. That is the main case durable execution exists for.
-- **Practice.** Durable execution is now standard infrastructure for production agents. Pydantic AI supports eight engines. DBOS keeps its workflow log in the application's own PostgreSQL, so it needs no new service. Temporal is still the most capable option, and the heaviest to run. ([decision audit, A4](../research/DECISION_AUDIT_2026-11-27.md#a4-durable-execution--change))
+- **Practice.** Durable execution is now standard infrastructure for production agents. Pydantic AI supports eight engines. DBOS keeps its workflow log in the application's own PostgreSQL, so it needs no new service. Temporal is still the most capable option, and the heaviest to run. ([decision audit, A4](../research/2026-11-27-decision-audit.md#a4-durable-execution--change))
 
 ## Decision
 

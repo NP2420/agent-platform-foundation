@@ -8,23 +8,23 @@ This table is the single place that tracks project status.
 
 | Item | Status | Notes |
 |---|---|---|
-| Phase 0: host and container environment | Done | [Environment baseline](research/ENVIRONMENT_BASELINE_2026-11-25.md). Revisit if the host changes. |
-| Phase 0: inference topology | Done | Windows-hosted Ollama over WSL mirrored networking ([ADR 0010](adr/0010-windows-hosted-ollama-initial-deployment.md)) |
-| Phase 0: local model screening | Done for now | T1–T4 pass for both 4B models. To 32K context, Nemotron stays fully on GPU; Qwen3 4B only to 8K. See [benchmarks](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md). Quality comparison continues in the milestone 1 eval set. |
-| Phase 0: goal and scope | Done | Agreed 2026-11-26: [charter](PROJECT_CHARTER.md), ADRs [0011](adr/0011-file-agent-reference-use-case.md)–[0013](adr/0013-pull-request-workflow.md) |
-| Repository setup | Done | Public on GitHub, Apache-2.0, noreply authorship, `master` protected by a ruleset, secret scanning with push protection. Supply chain and releases per [ADR 0021](adr/0021-supply-chain-and-releases.md) once its `.github/` files and GitHub App are in place. |
-| **Milestone 1** | In progress | M1.1 done. Agreed decisions recorded (2026-11-27), as amended by the [decision audit](research/DECISION_AUDIT_2026-11-27.md). Next: M1.2. |
+| Phase 0: host and container environment | Done | [Environment baseline](../research/2026-11-25-environment-baseline.md). Revisit if the host changes. |
+| Phase 0: inference topology | Done | Windows-hosted Ollama over WSL mirrored networking ([ADR 0010](../adr/0010-windows-hosted-ollama-initial-deployment.md)) |
+| Phase 0: local model screening | Done for now | T1–T4 pass for both 4B models. To 32K context, Nemotron stays fully on GPU; Qwen3 4B only to 8K. See [benchmarks](../research/2026-11-25-ollama-model-benchmarks.md). Quality comparison continues in the milestone 1 eval set. |
+| Phase 0: goal and scope | Done | Agreed 2026-11-26: [charter](charter.md), ADRs [0011](../adr/0011-file-agent-reference-use-case.md)–[0013](../adr/0013-pull-request-workflow.md) |
+| Repository setup | Done | Public on GitHub, Apache-2.0, noreply authorship, `master` protected by a ruleset, secret scanning with push protection. Supply chain and releases per [ADR 0021](../adr/0021-supply-chain-and-releases.md) once its `.github/` files and GitHub App are in place. |
+| **Milestone 1** | In progress | M1.1 done. Agreed decisions recorded (2026-11-27), as amended by the [decision audit](../research/2026-11-27-decision-audit.md). Next: M1.2. |
 
 **Next steps**
 
-1. Apply [ADR 0021](adr/0021-supply-chain-and-releases.md)'s `.github/` files, GitHub App, `release` environment, and required checks.
-2. M1.2: design the domain types and run state machine for approval, after the [phase reading](LEARNING_PATH_AND_SOURCES.md#reading-by-phase).
+1. Apply [ADR 0021](../adr/0021-supply-chain-and-releases.md)'s `.github/` files, GitHub App, `release` environment, and required checks.
+2. M1.2: design the domain types and run state machine for approval, after the [phase reading](../learning/learning-path.md#reading-by-phase).
 
 Carried over from model screening, for M1.3 and M1.4: rerun the thinking-on context test with `--num-predict 512`; record Ollama's flash-attention and KV-cache settings; rerun the one stalled Nemotron row.
 
 ## Working cycle
 
-For each chunk ([CONTRIBUTING.md](../CONTRIBUTING.md)):
+For each chunk ([CONTRIBUTING.md](../../CONTRIBUTING.md)):
 
 1. **Read:** the phase reading, before the phase starts.
 2. **Design:** types, signatures, failure semantics, and planned tests, with options. The owner approves before code.
@@ -36,15 +36,15 @@ For each chunk ([CONTRIBUTING.md](../CONTRIBUTING.md)):
 
 ## Milestone 1: cited answers from the CLI
 
-**Delivers:** a CLI question → real runtime → search over approved folders → an answer citing file and section, or "not supported by the documents". Built eval-first ([ADR 0017](adr/0017-eval-first.md)): a fixed pipeline and an agent loop, each with two tool-call methods, compared on the same eval set with local and hosted models.
+**Delivers:** a CLI question → real runtime → search over approved folders → an answer citing file and section, or "not supported by the documents". Built eval-first ([ADR 0017](../adr/0017-eval-first.md)): a fixed pipeline and an agent loop, each with two tool-call methods, compared on the same eval set with local and hosted models.
 
 ### M1.1: Repository and toolchain — done
 
-Python 3.15, uv, Ruff, Pyright, pytest, CI, pre-commit ([ADR 0014](adr/0014-python-toolchain.md), [ADR 0015](adr/0015-pyright.md)).
+Python 3.15, uv, Ruff, Pyright, pytest, CI, pre-commit ([ADR 0014](../adr/0014-python-toolchain.md), [ADR 0015](../adr/0015-pyright.md)).
 
 ### M1.2: Domain types and run state machine
 
-Pydantic domain types ([ADR 0016](adr/0016-pydantic-domain-types.md)) for runs, steps, messages, tool calls, model results, events, errors, and the principal. The run state machine with `QUEUED`, `RUNNING`, `WAITING_APPROVAL`, `WAITING_INPUT`, `CANCELLING`, `CANCELLED`, `COMPLETED`, and `FAILED` with reasons. Immutable step records, the unit of later recovery ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)). UUIDv7 IDs. structlog JSON logs with redaction, and OpenTelemetry spans with no exporter by default, correlated by trace ID ([observability spec](OBSERVABILITY_SPEC.md)). No model, no database.
+Pydantic domain types ([ADR 0016](../adr/0016-pydantic-domain-types.md)) for runs, steps, messages, tool calls, model results, events, errors, and the principal. The run state machine with `QUEUED`, `RUNNING`, `WAITING_APPROVAL`, `WAITING_INPUT`, `CANCELLING`, `CANCELLED`, `COMPLETED`, and `FAILED` with reasons. Immutable step records, the unit of later recovery ([ADR 0018](../adr/0018-durable-execution-decided-in-m2.md)). UUIDv7 IDs. structlog JSON logs with redaction, and OpenTelemetry spans with no exporter by default, correlated by trace ID ([observability spec](../design/observability.md)). No model, no database.
 **Exit:** example and Hypothesis stateful tests cover every legal and illegal transition; terminal states never change.
 
 ### M1.3: Eval harness and first cases
@@ -64,7 +64,7 @@ First the threat model (OWASP LLM Top 10 and STRIDE). Then the tool registry, po
 
 ### M1.6: Corpus, extraction, and search
 
-The corpus manifest and fetch script ([ADR 0020](adr/0020-data-and-model-governance.md)): equipment manuals and the PostgreSQL 18 and 19 manuals. Extraction for Markdown, text, code, text-based PDF (pypdf vs pdfplumber), and HTML. Structure-aware chunking. PostgreSQL 18 in Docker Compose with pg_textsearch and pgvector, through psycopg 3. `search_files` with passage IDs, token budgets, and freshness checks. Then the staged retrieval comparison, on retrieval metrics alone ([ADR 0019](adr/0019-search-architecture.md)).
+The corpus manifest and fetch script ([ADR 0020](../adr/0020-data-and-model-governance.md)): equipment manuals and the PostgreSQL 18 and 19 manuals. Extraction for Markdown, text, code, text-based PDF (pypdf vs pdfplumber), and HTML. Structure-aware chunking. PostgreSQL 18 in Docker Compose with pg_textsearch and pgvector, through psycopg 3. `search_files` with passage IDs, token budgets, and freshness checks. Then the staged retrieval comparison, on retrieval metrics alone ([ADR 0019](../adr/0019-search-architecture.md)).
 **Exit:** a retrieval report per arm (recall@k, MRR, latency, VRAM) on the dev set, and the winning arm recorded; tests cover re-indexing, freshness, hash re-checks, and passage lineage.
 
 ### M1.7: Fixed pipeline baseline
@@ -88,7 +88,7 @@ Rebuild the milestone 1 agent on LangGraph and on Pydantic AI, time-boxed, and c
 
 ### After milestone 1: injection classifier
 
-A time-boxed learning project. Baseline an open detector (licence checked first), then train our own: logistic regression on embeddings, then a fine-tuned small transformer. Data: the injected-content eval cases, public injection sets, and ordinary manual text as negatives, including warnings that look like instructions. Report precision and recall and the chosen threshold, then attack the classifier adaptively until it breaks. The result is telemetry only ([security spec](SECURITY_SPEC.md#prompt-injection)). Written up as a learning note.
+A time-boxed learning project. Baseline an open detector (licence checked first), then train our own: logistic regression on embeddings, then a fine-tuned small transformer. Data: the injected-content eval cases, public injection sets, and ordinary manual text as negatives, including warnings that look like instructions. Report precision and recall and the chosen threshold, then attack the classifier adaptively until it breaks. The result is telemetry only ([security spec](../design/security.md#prompt-injection)). Written up as a learning note.
 
 ## Milestone 2: persisted runs, API, and observability
 
@@ -96,8 +96,8 @@ A time-boxed learning project. Baseline an open detector (licence checked first)
 
 ### M2.1: PostgreSQL persistence
 
-Schema, migrations, repositories, transaction boundaries, run, step, and event persistence, idempotency records, document index tables, and the `audit_events` table with insert-and-select-only grants, migrated from the M1 JSONL with the chain intact. Review the API and data-model specs first. Then the durability experiment from [ADR 0018](adr/0018-durable-execution-decided-in-m2.md): our own step log, DBOS, and Temporal, each killed mid model call, mid tool call, and during an approval wait.
-**Decide:** keep psycopg 3 or switch to asyncpg, by the workload benchmark in the [PostgreSQL note](research/POSTGRES_18_VS_19.md#workload-benchmark) (the version is already 18).
+Schema, migrations, repositories, transaction boundaries, run, step, and event persistence, idempotency records, document index tables, and the `audit_events` table with insert-and-select-only grants, migrated from the M1 JSONL with the chain intact. Review the API and data-model specs first. Then the durability experiment from [ADR 0018](../adr/0018-durable-execution-decided-in-m2.md): our own step log, DBOS, and Temporal, each killed mid model call, mid tool call, and during an approval wait.
+**Decide:** keep psycopg 3 or switch to asyncpg, by the workload benchmark in the [PostgreSQL note](../research/postgres-18-vs-19.md#workload-benchmark) (the version is already 18).
 **Exit:** tests cover conflicts, restart recovery, uniqueness, and concurrent access; the durability mechanism is chosen and recorded in an ADR, with the experiment's results.
 
 ### M2.2: API and event streaming
@@ -107,7 +107,7 @@ Versioned REST API, SSE events, idempotency keys, error envelope, scheduled and 
 
 ### M2.3: Trace viewer and CI eval gate
 
-Langfuse and Phoenix, each as an optional Compose profile, compared on the same traces and chosen by the criteria in the [observability spec](OBSERVABILITY_SPEC.md#trace-viewer-m23); the choice goes in an ADR. Metrics exported over OTLP. The public eval set runs in CI and fails the PR when a paired comparison with the milestone 1 baseline (exact McNemar test on the whole set) shows a significant regression.
+Langfuse and Phoenix, each as an optional Compose profile, compared on the same traces and chosen by the criteria in the [observability spec](../design/observability.md#trace-viewer-m23); the choice goes in an ADR. Metrics exported over OTLP. The public eval set runs in CI and fails the PR when a paired comparison with the milestone 1 baseline (exact McNemar test on the whole set) shows a significant regression.
 **Exit:** a bad run can be diagnosed from its trace and records alone; a deliberate quality regression fails CI.
 
 ## Milestone 3: multiple users
@@ -116,7 +116,7 @@ Langfuse and Phoenix, each as an optional Compose profile, compared on the same 
 
 ### M3.1: Identity and authorisation
 
-Local accounts with Argon2id passwords, scoped API tokens, sessions with CSRF protection, per-user folder grants, admin role ([security spec](SECURITY_SPEC.md#identity-m31)). File permissions are enforced by the application's authorisation layer, because the agent runs as one OS user, and row-level security backs it in PostgreSQL.
+Local accounts with Argon2id passwords, scoped API tokens, sessions with CSRF protection, per-user folder grants, admin role ([security spec](../design/security.md#identity-m31)). File permissions are enforced by the application's authorisation layer, because the agent runs as one OS user, and row-level security backs it in PostgreSQL.
 **Exit:** tests show one user's runs, files, and results are invisible to another, including with an application check deliberately removed (RLS still holds).
 
 ### M3.2: Approvals and web inspector
@@ -140,7 +140,7 @@ Summaries and reports written to a per-user output folder only.
 
 ### M4.2: Orchestrator
 
-Plans as data, DAG validation, dependency resolution, bounded concurrency, failure policies, cancellation ([runtime spec](RUNTIME_SPEC.md#orchestration)). A bulk file reorganisation is the first real plan. Then the prompt-injection pattern: plan-then-execute vs a quarantined reader, compared on injected-content cases and adaptive attacks ([security spec](SECURITY_SPEC.md#prompt-injection)).
+Plans as data, DAG validation, dependency resolution, bounded concurrency, failure policies, cancellation ([runtime spec](../design/runtime.md#orchestration)). A bulk file reorganisation is the first real plan. Then the prompt-injection pattern: plan-then-execute vs a quarantined reader, compared on injected-content cases and adaptive attacks ([security spec](../design/security.md#prompt-injection)).
 **Exit:** tests prove validation, dependency order, bounded parallelism, the failure policy, and clean cancellation; the injection pattern is chosen in an ADR, and no `external`-tier tool ships before it.
 
 ### M4.3: File organisation
@@ -150,7 +150,7 @@ Rename, move, and tag, run as orchestrated plans with a preview, approval, an un
 
 ### M4.4: MCP
 
-MCP client adapter, server lifecycle, trust policy ([security spec](SECURITY_SPEC.md#mcp-trust-m44)). MCP tools go through the same registry, policy, and dispatcher path. First-party and remote servers only; third-party local servers wait for the M5 sandbox.
+MCP client adapter, server lifecycle, trust policy ([security spec](../design/security.md#mcp-trust-m44)). MCP tools go through the same registry, policy, and dispatcher path. First-party and remote servers only; third-party local servers wait for the M5 sandbox.
 **Exit:** a test MCP server's tool runs under the same policy and audit as a native tool.
 
 ## Milestone 5: sandboxed code execution
@@ -158,7 +158,7 @@ MCP client adapter, server lifecycle, trust policy ([security spec](SECURITY_SPE
 ### M5.1: Execution broker and sandbox
 
 Structured execution requests, per-run workspaces, worker identity, resource and network limits, artifact handling, cleanup, audit.
-**Decide:** the sandbox backend ([research note](research/LOCAL_SANDBOX_OPTIONS.md)), including KVM feasibility. It must run on a plain Linux host, not only WSL.
+**Decide:** the sandbox backend ([research note](../research/local-sandbox-options.md)), including KVM feasibility. It must run on a plain Linux host, not only WSL.
 **Exit:** negative tests show filesystem, network, process, and resource access outside the grant is blocked. No arbitrary execution before this.
 
 ## Milestone 6: browser
@@ -167,11 +167,11 @@ Structured execution requests, per-run workspaces, worker identity, resource and
 
 ## Milestone 7: enterprise profile
 
-**Delivers:** the same system in the shape a large company would run it, using free local stand-ins. Candidate tools: Keycloak (SSO), OpenSearch or PGroonga (Japanese search), vLLM behind a model gateway, kind or k3d with Terraform, Langfuse; classification and export-control policy; Japanese eval cases. Tools are chosen when the milestone starts. Scope is in the [enterprise gap note](research/ENTERPRISE_GAP.md).
+**Delivers:** the same system in the shape a large company would run it, using free local stand-ins. Candidate tools: Keycloak (SSO), OpenSearch or PGroonga (Japanese search), vLLM behind a model gateway, kind or k3d with Terraform, Langfuse; classification and export-control policy; Japanese eval cases. Tools are chosen when the milestone starts. Scope is in the [enterprise gap note](../research/enterprise-gap.md).
 
 ## Every milestone ends with
 
-- a release: merging the open release-please PR produces the semantic version tag, changelog, release notes, and an SBOM ([ADR 0021](adr/0021-supply-chain-and-releases.md));
+- a release: merging the open release-please PR produces the semantic version tag, changelog, release notes, and an SBOM ([ADR 0021](../adr/0021-supply-chain-and-releases.md));
 - the release review below, scoped to that milestone;
 - a learning note.
 

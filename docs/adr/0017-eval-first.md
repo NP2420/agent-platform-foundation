@@ -39,7 +39,7 @@ The test set is large enough to justify statistical tests beyond intervals, or t
 
 ## Amendment, 2026-11-27
 
-Agreed with the owner after the [decision audit](../research/DECISION_AUDIT_2026-11-27.md) (A9, A10, A11, A16, A17, A18). Where this section and the text above disagree, this section wins.
+Agreed with the owner after the [decision audit](../research/2026-11-27-decision-audit.md) (A9, A10, A11, A16, A17, A18). Where this section and the text above disagree, this section wins.
 
 **Categories.** Eight, in three families, replacing the six above:
 

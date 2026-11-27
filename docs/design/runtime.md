@@ -1,6 +1,6 @@
 # Runtime and Orchestration
 
-**Status:** Proposed. Internal types and serialisation are designed in M1.2. The durability mechanism is chosen in M2.1 ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)). The scheduler and plan schema are finalised in M4.2.
+**Status:** Proposed. Internal types and serialisation are designed in M1.2. The durability mechanism is chosen in M2.1 ([ADR 0018](../adr/0018-durable-execution-decided-in-m2.md)). The scheduler and plan schema are finalised in M4.2.
 
 ## Runtime responsibility
 
@@ -23,7 +23,7 @@ The domain layer (types, the run state machine, policy decisions, budget account
 
 ## The loop
 
-The loop is ReAct-style: the model reasons, proposes an action (a tool call, a question to the user, or a final answer), the runtime carries it out under policy, and the observation goes back into context. Tool calls arrive either as native tool calls or as schema-constrained JSON, depending on the profile ([model spec](MODEL_SPEC.md#tool-call-methods)); the loop is the same for both.
+The loop is ReAct-style: the model reasons, proposes an action (a tool call, a question to the user, or a final answer), the runtime carries it out under policy, and the observation goes back into context. Tool calls arrive either as native tool calls or as schema-constrained JSON, depending on the profile ([model spec](models.md#tool-call-methods)); the loop is the same for both.
 
 ```text
 while run is RUNNING and budget remains:
@@ -76,11 +76,11 @@ Terminal states never change, apart from an explicit administrative correction r
 
 ## Clarification
 
-The model asks the user a question through a reserved `ask_user` action, never as free text that the runtime has to guess at. Questions are limited per run by a configurable cap, default 4. Once the cap is reached, the model has to answer with its assumptions stated, or abstain. The question count goes on the run's trace, and the eval reports how often the agent asks when it didn't need to ([decision audit, A17](research/DECISION_AUDIT_2026-11-27.md#a17-clarification-cap--keep-the-cap-measure-over-asking)). A cancelled or expired `WAITING_INPUT` run ends `CANCELLED` or `FAILED` with a reason, like any other wait.
+The model asks the user a question through a reserved `ask_user` action, never as free text that the runtime has to guess at. Questions are limited per run by a configurable cap, default 4. Once the cap is reached, the model has to answer with its assumptions stated, or abstain. The question count goes on the run's trace, and the eval reports how often the agent asks when it didn't need to ([decision audit, A17](../research/2026-11-27-decision-audit.md#a17-clarification-cap--keep-the-cap-measure-over-asking)). A cancelled or expired `WAITING_INPUT` run ends `CANCELLED` or `FAILED` with a reason, like any other wait.
 
 ## Step records
 
-Every completed model call, tool call, approval decision, and user answer becomes an immutable step record: step ID (UUIDv7), run ID, kind, a digest of its inputs, outcome (succeeded, failed, cancelled, or unknown), timings, and usage where measured. Step records are the unit of recovery: after a restart, a run resumes from its last recorded step, and an operation that started without a recorded outcome is treated as unknown, never as not done. Milestone 1 keeps them in memory; M2.1 persists them using the mechanism [ADR 0018](adr/0018-durable-execution-decided-in-m2.md) selects.
+Every completed model call, tool call, approval decision, and user answer becomes an immutable step record: step ID (UUIDv7), run ID, kind, a digest of its inputs, outcome (succeeded, failed, cancelled, or unknown), timings, and usage where measured. Step records are the unit of recovery: after a restart, a run resumes from its last recorded step, and an operation that started without a recorded outcome is treated as unknown, never as not done. Milestone 1 keeps them in memory; M2.1 persists them using the mechanism [ADR 0018](../adr/0018-durable-execution-decided-in-m2.md) selects.
 
 ## Error classes
 
@@ -99,7 +99,7 @@ Errors shown to the model are sanitised. Logs carry full structured context, sub
 
 ## Retries
 
-Only the transient classes above are retried: rate limits, transient provider errors, and timeouts on calls known to be safe to repeat. Retries use exponential backoff with full jitter, a bounded number of attempts, and a total time cap inside the run's deadline. A `Retry-After` from the provider is honoured when it falls within that cap; otherwise the call fails. Each attempt is recorded. There is no automatic fallback: a failed call never moves to another model or provider on its own ([model spec](MODEL_SPEC.md#routing)). Writes are never retried automatically.
+Only the transient classes above are retried: rate limits, transient provider errors, and timeouts on calls known to be safe to repeat. Retries use exponential backoff with full jitter, a bounded number of attempts, and a total time cap inside the run's deadline. A `Retry-After` from the provider is honoured when it falls within that cap; otherwise the call fails. Each attempt is recorded. There is no automatic fallback: a failed call never moves to another model or provider on its own ([model spec](models.md#routing)). Writes are never retried automatically.
 
 ## Budgets
 
@@ -164,7 +164,7 @@ A child agent is a child run with: a parent reference, explicitly scoped tools a
 
 ### Durability boundary
 
-The scheduler exposes application-level operations: start plan, execute ready node, record outcome, request approval, resume. The durability mechanism chosen in M2.1 implements that port ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)). If it is Temporal, workflow code must be deterministic and side effects go in activities. Whatever it is, a step can run again if its outcome wasn't recorded, so tools still need idempotency.
+The scheduler exposes application-level operations: start plan, execute ready node, record outcome, request approval, resume. The durability mechanism chosen in M2.1 implements that port ([ADR 0018](../adr/0018-durable-execution-decided-in-m2.md)). If it is Temporal, workflow code must be deterministic and side effects go in activities. Whatever it is, a step can run again if its outcome wasn't recorded, so tools still need idempotency.
 
 ## Testing
 

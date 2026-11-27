@@ -14,7 +14,7 @@ A self-hosted agent platform, built from first principles to practise production
 
 ## Where things stand
 
-Phase 0 and M1.1 (toolchain and CI) are done. Milestone 1 (cited answers from the CLI) continues with M1.2, the domain types and run state machine. See the status table in [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md).
+Phase 0 and M1.1 (toolchain and CI) are done. Milestone 1 (cited answers from the CLI) continues with M1.2, the domain types and run state machine. See the status table in [`docs/project/roadmap.md`](docs/project/roadmap.md).
 
 ## Documentation
 
@@ -22,23 +22,23 @@ Start with the charter, architecture, and roadmap. Read the specifications when 
 
 | Document | Covers |
 |---|---|
-| [Project charter](docs/PROJECT_CHARTER.md) | Purpose, scope, non-goals, use cases, quality attributes |
-| [Architecture](docs/ARCHITECTURE.md) | Components, trust boundaries, request flow, source layout |
-| [Tech stack](docs/TECH_STACK.md) | Technology choices, alternatives, and when to revisit them |
-| [Development roadmap](docs/DEVELOPMENT_ROADMAP.md) | Current status, phases, and exit gates |
+| [Project charter](docs/project/charter.md) | Purpose, scope, non-goals, use cases, quality attributes |
+| [Architecture](docs/design/architecture.md) | Components, trust boundaries, request flow, source layout |
+| [Tech stack](docs/design/tech-stack.md) | Technology choices, alternatives, and when to revisit them |
+| [Development roadmap](docs/project/roadmap.md) | Current status, phases, and exit gates |
 | [Contributing](CONTRIBUTING.md) | Workflow, branches, commits, PRs, local checks |
-| [Assistant working guide](docs/ASSISTANT_WORKING_GUIDE.md) | How AI assistants should work in this repository |
-| [Learning path](docs/LEARNING_PATH_AND_SOURCES.md) | Books and primary sources, mapped to phases |
+| [Assistant working guide](AGENTS.md) | How AI assistants should work in this repository |
+| [Learning path](docs/learning/learning-path.md) | Books and primary sources, mapped to phases |
 
-**Specifications:** [runtime and orchestration](docs/RUNTIME_SPEC.md) · [models](docs/MODEL_SPEC.md) · [tools](docs/TOOL_SPEC.md) · [security](docs/SECURITY_SPEC.md) · [data model](docs/DATA_MODEL.md) · [observability and audit](docs/OBSERVABILITY_SPEC.md) · [API](docs/API_SPEC.md) · [testing and evaluation](docs/EVALUATION_SPEC.md)
+**Specifications:** [runtime and orchestration](docs/design/runtime.md) · [models](docs/design/models.md) · [tools](docs/design/tools.md) · [security](docs/design/security.md) · [data model](docs/design/data-model.md) · [observability and audit](docs/design/observability.md) · [API](docs/design/api.md) · [testing and evaluation](docs/design/evaluation.md)
 
 Observability lives in the architecture doc. The release checklist is the last section of the roadmap.
 
-**Decisions and research:** [ADRs](docs/adr/README.md) · [research log](docs/RESEARCH_LOG.md) · [environment baseline](docs/research/ENVIRONMENT_BASELINE_2026-11-25.md) · [Ollama benchmarks](docs/research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md) · [sandbox options](docs/research/LOCAL_SANDBOX_OPTIONS.md) · [PostgreSQL 18 vs 19](docs/research/POSTGRES_18_VS_19.md) · [enterprise gap](docs/research/ENTERPRISE_GAP.md)
+**Decisions and research:** [ADRs](docs/adr/README.md) · [research log](docs/research/research-log.md) · [environment baseline](docs/research/2026-11-25-environment-baseline.md) · [Ollama benchmarks](docs/research/2026-11-25-ollama-model-benchmarks.md) · [sandbox options](docs/research/local-sandbox-options.md) · [PostgreSQL 18 vs 19](docs/research/postgres-18-vs-19.md) · [enterprise gap](docs/research/enterprise-gap.md)
 
 ## Development
 
-Requires [uv](https://docs.astral.sh/uv/) 0.13.x. From WSL, in a clone on the Linux filesystem (not `/mnt/c`; see the [environment baseline](docs/research/ENVIRONMENT_BASELINE_2026-11-25.md)):
+Requires [uv](https://docs.astral.sh/uv/) 0.13.x. From WSL, in a clone on the Linux filesystem (not `/mnt/c`; see the [environment baseline](docs/research/2026-11-25-environment-baseline.md)):
 
 ```bash
 uv sync                      # Python 3.15 and dev tools, exactly as locked
