@@ -26,7 +26,7 @@ A Python modular monolith with explicit adapter boundaries. The boxes below are 
 
 **Context manager.** Builds each model request from stored history under a token budget: selects, summarises, retrieves, or drops messages. It is not the store of record. Compaction keeps provenance and never silently drops hard constraints.
 
-**Model gateway.** Maps a logical profile to a provider adapter. Owns capability checks, timeouts, safe retries, usage accounting, and fallback. See [MODEL_SPEC.md](MODEL_SPEC.md).
+**Model gateway.** Maps a logical profile to a provider adapter. Owns capability checks, timeouts, safe retries, and usage accounting. No automatic fallback between models or providers. See [MODEL_SPEC.md](MODEL_SPEC.md).
 
 **Orchestrator.** Validates plans (as data), schedules ready nodes under concurrency and budget limits, and handles failure and cancellation. Executes registered operations only. See [RUNTIME_SPEC.md](RUNTIME_SPEC.md#orchestration).
 
@@ -145,17 +145,7 @@ Portable by design ([ADR 0012](adr/0012-portable-deployment.md)): containers, co
 
 ## Observability
 
-Three separate data products:
-
-- **Run event history** in PostgreSQL: the authoritative record of what a run did. Used for inspection, audit, and client replay.
-- **Traces** via OpenTelemetry. One span per causal operation: `api.request` → `agent.run` → `context.build`, `model.generate`, `policy.evaluate`, `tool.execute`, `approval.wait`. GenAI semantic conventions are still evolving, so pin the version you adopt.
-- **Structured logs and metrics**, carrying run, step, and correlation IDs. Metrics cover run counts and durations, model and tool latency and errors, in-flight work, approval waits, and budget exhaustion.
-
-Rules:
-
-- Metric labels stay bounded: no run IDs, prompts, paths, user IDs, or tool names taken from untrusted sources.
-- Record metadata and digests by default, not raw prompts, tool payloads, file contents, headers, or secrets. Debug payload capture is opt-in, access-controlled, and time-limited.
-- Start with structured logs and the OTel SDK. A Collector with Grafana, Tempo, and Prometheus is an optional Compose profile once traces are worth looking at. Unit tests never need the telemetry stack.
+Four separate records: run events and step records (the truth about runs), audit events (hash-chained security facts), traces (OpenTelemetry, with GenAI conventions), and structured logs and metrics. Metadata and digests by default, never raw content. An LLM trace viewer arrives in M2.3. Details, including retention, are in [OBSERVABILITY_SPEC.md](OBSERVABILITY_SPEC.md).
 
 ## Deferred choices
 

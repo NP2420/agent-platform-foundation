@@ -60,7 +60,7 @@ Typer, as a thin client: it parses arguments, calls the runtime (an API client f
 - Contracts: Pydantic v2 for domain and boundary types, in strict, frozen, extra-forbidding mode ([ADR 0016](adr/0016-pydantic-domain-types.md)); JSON Schema across process and tool boundaries.
 - Tests: pytest; Hypothesis for property and stateful tests, starting with the run state machine; contract tests for providers and MCP.
 - Lint and format: Ruff. Type checking: Pyright in strict mode, the one authoritative checker ([ADR 0015](adr/0015-pyright.md)).
-- Telemetry: OpenTelemetry SDK and structured logs. Collectors and backends are optional.
+- Telemetry: structlog for JSON logs, with trace IDs injected from the OpenTelemetry SDK; OTLP over HTTP/protobuf. The trace viewer (Langfuse or Phoenix) is chosen in M2.3; a Collector only when there are two destinations ([observability spec](OBSERVABILITY_SPEC.md)).
 - Evaluation: our own harness and versioned cases in `evals/`.
 
 ## CI and repository

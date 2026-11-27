@@ -44,7 +44,7 @@ Python 3.15, uv, Ruff, Pyright, pytest, CI, pre-commit ([ADR 0014](adr/0014-pyth
 
 ### M1.2: Domain types and run state machine
 
-Pydantic domain types ([ADR 0016](adr/0016-pydantic-domain-types.md)) for runs, steps, messages, tool calls, model results, events, errors, and the principal. The run state machine with `QUEUED`, `RUNNING`, `WAITING_APPROVAL`, `WAITING_INPUT`, `CANCELLING`, `CANCELLED`, `COMPLETED`, and `FAILED` with reasons. Immutable step records, the unit of later recovery ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)). UUIDv7 IDs. Structured logs carrying run and trace IDs. No model, no database.
+Pydantic domain types ([ADR 0016](adr/0016-pydantic-domain-types.md)) for runs, steps, messages, tool calls, model results, events, errors, and the principal. The run state machine with `QUEUED`, `RUNNING`, `WAITING_APPROVAL`, `WAITING_INPUT`, `CANCELLING`, `CANCELLED`, `COMPLETED`, and `FAILED` with reasons. Immutable step records, the unit of later recovery ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)). UUIDv7 IDs. structlog JSON logs with redaction, and OpenTelemetry spans with no exporter by default, correlated by trace ID ([observability spec](OBSERVABILITY_SPEC.md)). No model, no database.
 **Exit:** example and Hypothesis stateful tests cover every legal and illegal transition; terminal states never change.
 
 ### M1.3: Eval harness and first cases
@@ -59,7 +59,7 @@ Provider-neutral contract; Ollama, Anthropic API, and fake adapters; both tool-c
 
 ### M1.5: Threat model, tools, policy, and file search
 
-First the threat model (OWASP LLM Top 10 and STRIDE). Then the tool registry, policy checks, risk tiers, classification, and audit records, and the file-search and file-read tools: extraction for Markdown, text, code, and PDF; passages with citations; path allowlist and the always-blocked list. Build the public corpus: equipment manuals and the PostgreSQL 18 and 19 manuals.
+First the threat model (OWASP LLM Top 10 and STRIDE). Then the tool registry, policy checks, risk tiers, classification, and hash-chained audit records in a local JSONL file, and the file-search and file-read tools: extraction for Markdown, text, code, and PDF; passages with citations; path allowlist and the always-blocked list. Build the public corpus: equipment manuals and the PostgreSQL 18 and 19 manuals.
 **Exit:** contract, permission, path-escape, classification, and malformed-input tests pass.
 
 ### M1.6: Fixed pipeline baseline
@@ -87,7 +87,7 @@ Rebuild the milestone 1 agent on LangGraph and on Pydantic AI, time-boxed, and c
 
 ### M2.1: PostgreSQL persistence
 
-Schema, migrations, repositories, transaction boundaries, run, step, and event persistence, idempotency records, document index tables. Review the API and data-model specs first. Then the durability experiment from [ADR 0018](adr/0018-durable-execution-decided-in-m2.md): our own step log, DBOS, and Temporal, each killed mid model call, mid tool call, and during an approval wait.
+Schema, migrations, repositories, transaction boundaries, run, step, and event persistence, idempotency records, document index tables, and the `audit_events` table with insert-and-select-only grants, migrated from the M1 JSONL with the chain intact. Review the API and data-model specs first. Then the durability experiment from [ADR 0018](adr/0018-durable-execution-decided-in-m2.md): our own step log, DBOS, and Temporal, each killed mid model call, mid tool call, and during an approval wait.
 **Decide:** PostgreSQL 18 vs 19 ([research note](research/POSTGRES_18_VS_19.md)); psycopg 3 vs asyncpg.
 **Exit:** tests cover conflicts, restart recovery, uniqueness, and concurrent access; the durability mechanism is chosen and recorded in an ADR, with the experiment's results.
 
@@ -96,9 +96,9 @@ Schema, migrations, repositories, transaction boundaries, run, step, and event p
 Versioned REST API, SSE events, idempotency keys, error envelope, scheduled and event-triggered runs through the same create-run path, and a feedback endpoint. The CLI becomes an API client.
 **Exit:** a client can run a task and reconstruct its progress from events alone.
 
-### M2.3: Tracing backend and CI eval gate
+### M2.3: Trace viewer and CI eval gate
 
-OpenTelemetry Collector and dashboards as an optional Compose profile. The public eval set runs in CI and fails the PR on a regression past a threshold set from the milestone 1 baseline.
+Langfuse and Phoenix, each as an optional Compose profile, compared on the same traces and chosen by the criteria in the [observability spec](OBSERVABILITY_SPEC.md#trace-viewer-m23); the choice goes in an ADR. Metrics exported over OTLP. The public eval set runs in CI and fails the PR on a regression past a threshold set from the milestone 1 baseline.
 **Exit:** a bad run can be diagnosed from its trace and records alone; a deliberate quality regression fails CI.
 
 ## Milestone 3: multiple users

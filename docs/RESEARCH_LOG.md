@@ -13,7 +13,7 @@ Dated findings that shaped decisions. Each entry is short and links to the resea
 | R-007 | Which MCP SDK and protocol revision? | Release notes, migration guide, contract test | M4.4 |
 | R-008 | Which durable execution mechanism: our own step log, DBOS, or Temporal? | Failure-injection experiment ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)) | M2.1 |
 | R-009 | Do tiered models beat one model? | Same cases and hardware, cost vs quality | Later |
-| R-010 | Which observability backend? | Usefulness vs local resource cost | M2.3 |
+| R-010 | Which trace viewer: Langfuse or Phoenix? | Same traces in each; readability, eval linking, measured resource cost | M2.3 |
 | R-011 | Is full-text search enough, or are embeddings needed? | Milestone 1 eval: retrieval misses by cause | M1.8 |
 | R-012 | Which model backs the default profile? | Milestone 1 eval: local vs hosted accuracy, cost, latency | M1.8 |
 | R-013 | Does an agent loop beat a fixed pipeline, and which tool-call method works on small models? | Four-way comparison on the same eval set | M1.8 |

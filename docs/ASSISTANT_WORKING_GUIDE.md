@@ -20,6 +20,8 @@ Rules for any AI assistant working in this repository. They are in addition to t
 - Check `git status` and `git diff --stat` before staging. Unexpected deletions are a stop signal.
 - Keep unrelated changes in separate commits (for example, a restore and a rewrite).
 - Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for branch names, Conventional Commit messages, and PR size and shape.
+- Hand every PR to the owner as commands ready to run in WSL: fetch and check out the branch, `git push`, then `gh pr create` with the title and a body in the template's sections passed through a quoted heredoc (`--body-file - <<'EOF'`).
+- Write files only on the feature branch in the working copy. No staging folders or file bundles to copy across.
 - Files that run code automatically (`.github/`, `.pre-commit-config.yaml`) can't be written from the assistant's side. Give the owner the exact commands to create or change them.
 
 ## Decisions belong to the owner
