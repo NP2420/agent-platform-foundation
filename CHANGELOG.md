@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/NP2420/agent-platform-foundation/compare/v0.1.0...v0.1.1) (2026-11-27)
+
+
+### Documentation
+
+* restructure docs by purpose ([#16](https://github.com/NP2420/agent-platform-foundation/issues/16)) ([17a5590](https://github.com/NP2420/agent-platform-foundation/commit/17a5590679eede94e59317c15d4107cab581b93b))
+
 ## 0.1.0 (2026-11-27)
 
 
