@@ -72,7 +72,7 @@ A duplicate `POST /v1/runs` with the same key returns the original run. Key scop
 
 ## Exposure
 
-Binds to loopback by default. Localhost is not a trust boundary in itself: consider other local processes and CSRF from browsers. Any non-loopback binding requires authentication, TLS, and explicit configuration.
+Binds to loopback by default. Localhost is not a trust boundary in itself: consider other local processes and CSRF from browsers. Any non-loopback binding requires authentication, TLS, and explicit configuration. Authentication, tokens, sessions, and CSRF are in the [security spec](SECURITY_SPEC.md#identity-m31).
 
 ## Errors
 
