@@ -66,5 +66,5 @@ Agreed with the owner after the [decision audit](../research/2026-11-27-decision
 
 **Trajectories.** Tool choice, call counts, and loops are diagnostics and budgets, not pass or fail. A case never fails only because the agent took a different valid path. A forbidden tool call or a policy violation fails the case whatever the answer (A18).
 
-**Service objectives.** After the M1.7 baseline, `docs/SERVICE_OBJECTIVES.md` sets measured targets: a correctness floor, abstention rate, p95 latency and time to first token, cost per question on the hosted model, and later availability (A16).
+**Service objectives.** After the M1.7 baseline, `docs/design/service-objectives.md` sets measured targets: a correctness floor, abstention rate, p95 latency and time to first token, cost per question on the hosted model, and later availability (A16).
 

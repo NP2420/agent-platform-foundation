@@ -1,6 +1,6 @@
 # Contributing
 
-How work happens in this repository. The reasons behind these rules are in [ADR 0013](docs/adr/0013-pull-request-workflow.md); the assistant-specific rules are in the [assistant working guide](AGENTS.md).
+How work happens in this repository. The reasons behind these rules are in [ADR 0013](docs/adr/0013-pull-request-workflow.md); the assistant-specific rules are in [AGENTS.md](AGENTS.md).
 
 ## Decisions
 
@@ -88,7 +88,7 @@ The repository setting that lets `GITHUB_TOKEN` create pull requests stays off; 
 
 ## Never commit
 
-Secrets or `.env` files, personal files, private eval sets (`evals/private/`), model weights, database volumes, local paths, or usernames. The repository is public.
+Secrets or `.env` files, personal files, private eval sets (`evals/private/`), model weights, database volumes, generated artifacts other than eval results, local paths, or usernames. The repository is public.
 
 ## Postmortems
 

@@ -84,10 +84,10 @@ Later milestones are in the [roadmap](roadmap.md).
 | Reliability | Retry, idempotency, cancellation, and recovery tests |
 | Portability | The stack starts from a clean Linux host with only configuration changes |
 
-Numeric targets are set after the first measured baseline, in `docs/SERVICE_OBJECTIVES.md`, written at the end of M1.7.
+Numeric targets are set after the first measured baseline, in `docs/design/service-objectives.md`, written at the end of M1.7.
 
 ## Constraints
 
 - Development hardware is a laptop with a 6 GB GPU ([environment baseline](../research/2026-11-25-environment-baseline.md)). Local models are small; hosted models fill the quality gap where allowed.
 - Hosted API use is paid separately from any Claude chat subscription, through a prepaid Console balance with a hard limit.
-- The repository is public. Personal files, personal evaluation cases, secrets, and model weights never enter it.
+- The repository is public; what never gets committed is listed in [CONTRIBUTING.md](../../CONTRIBUTING.md#never-commit).

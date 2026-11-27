@@ -12,13 +12,12 @@ This table is the single place that tracks project status.
 | Phase 0: inference topology | Done | Windows-hosted Ollama over WSL mirrored networking ([ADR 0010](../adr/0010-windows-hosted-ollama-initial-deployment.md)) |
 | Phase 0: local model screening | Done for now | T1–T4 pass for both 4B models. To 32K context, Nemotron stays fully on GPU; Qwen3 4B only to 8K. See [benchmarks](../research/2026-11-25-ollama-model-benchmarks.md). Quality comparison continues in the milestone 1 eval set. |
 | Phase 0: goal and scope | Done | Agreed 2026-11-26: [charter](charter.md), ADRs [0011](../adr/0011-file-agent-reference-use-case.md)–[0013](../adr/0013-pull-request-workflow.md) |
-| Repository setup | Done | Public on GitHub, Apache-2.0, noreply authorship, `master` protected by a ruleset, secret scanning with push protection. Supply chain and releases per [ADR 0021](../adr/0021-supply-chain-and-releases.md) once its `.github/` files and GitHub App are in place. |
+| Repository setup | Done | Public on GitHub, Apache-2.0, noreply authorship, `master` protected by a ruleset, secret scanning with push protection. Supply chain and releases ([ADR 0021](../adr/0021-supply-chain-and-releases.md)), licence and code scanning ([ADR 0022](../adr/0022-licences-code-scanning-coverage.md)), and link checks ([ADR 0023](../adr/0023-docs-layout-and-link-checks.md)) are live. |
 | **Milestone 1** | In progress | M1.1 done. Agreed decisions recorded (2026-11-27), as amended by the [decision audit](../research/2026-11-27-decision-audit.md). Next: M1.2. |
 
 **Next steps**
 
-1. Apply [ADR 0021](../adr/0021-supply-chain-and-releases.md)'s `.github/` files, GitHub App, `release` environment, and required checks.
-2. M1.2: design the domain types and run state machine for approval, after the [phase reading](../learning/learning-path.md#reading-by-phase).
+1. M1.2: design the domain types and run state machine for approval, after the [phase reading](../learning/learning-path.md#reading-by-phase).
 
 Carried over from model screening, for M1.3 and M1.4: rerun the thinking-on context test with `--num-predict 512`; record Ollama's flash-attention and KV-cache settings; rerun the one stalled Nemotron row.
 
@@ -70,7 +69,7 @@ The corpus manifest and fetch script ([ADR 0020](../adr/0020-data-and-model-gove
 ### M1.7: Fixed pipeline baseline
 
 Always search, then answer from the retrieved passages. Rejects answers that cite unretrieved passages. Measured on the eval set.
-**Exit:** a baseline eval report for each model and tool-call method; `docs/SERVICE_OBJECTIVES.md` written from the baseline numbers.
+**Exit:** a baseline eval report for each model and tool-call method; `docs/design/service-objectives.md` written from the baseline numbers.
 
 ### M1.8: Agent loop
 
