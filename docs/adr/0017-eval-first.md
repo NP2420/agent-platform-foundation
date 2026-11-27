@@ -1,6 +1,6 @@
 # ADR 0017: Eval-First Development and Eval Methodology
 
-- **Status:** Accepted
+- **Status:** Accepted; amended 2026-11-27 (see the end)
 - **Date:** 2026-11-26
 
 ## Context
@@ -36,3 +36,35 @@ Milestone 1 originally built the whole system and measured it in its last phase.
 ## Revisit when
 
 The test set is large enough to justify statistical tests beyond intervals, or the LLM judge disagrees with the owner's labels too often to be useful.
+
+## Amendment, 2026-11-27
+
+Agreed with the owner after the [decision audit](../research/DECISION_AUDIT_2026-11-27.md) (A9, A10, A11, A16, A17, A18). Where this section and the text above disagree, this section wins.
+
+**Categories.** Eight, in three families, replacing the six above:
+
+| Family | Category | What the case tests |
+|---|---|---|
+| Answer correctly | single-source | a fact stated in one passage |
+| | synthesis | combining two or more passages |
+| | version-sensitive | the answer differs by document version, and the question names the version |
+| Know its limits | unanswerable | in the corpus's domain, but the corpus doesn't say |
+| | false premise | the question assumes something false |
+| | out of scope | outside the corpus's domain altogether |
+| Robustness | underspecified | needs a clarifying question, or an answer with stated assumptions |
+| | injected content | a document contains instructions aimed at the model |
+
+**Size.** About 20 cases per category, about 160 in total, starting from about 10 per category in M1.3. Most questions are phrased as a service technician would ask them (procedures, specs, part numbers, troubleshooting); synthesis and version-sensitive cases lean toward an engineer's questions.
+
+**Categories are a hypothesis.** After the M1.7 baseline, an error-analysis pass reads the failing traces, groups the failures actually seen, and may split, merge, or add categories (A9).
+
+**Statistics.** Wilson 95% intervals on every rate. With about 20 cases, a per-category result is directional only (16 of 20 is 58–92%), so per-category numbers are shown with their intervals and never gate anything. The CI gate from M2.3 compares a change with the baseline on the whole set, paired case by case, with an exact McNemar test. On 160 cases that reliably catches a change of about 10 points and usually misses 5, and reports say so (A10).
+
+**Judge.** Binary pass or fail per rubric dimension, never a 1–5 scale. Calibrated against the owner's labels and reported as true-positive and true-negative rates (or Cohen's kappa), not raw agreement. Model, prompt, examples, and decoding are pinned; unparseable verdicts count as judge errors. With one labeller there's no human–human baseline, so a blind sample of the owner's labels is re-labelled a week later and the self-consistency is reported. A fresh sample is labelled at each milestone review (A11). The judge is a hosted model and follows the same data rules as any hosted call: never `restricted` content, and `internal` content only where that folder's policy allows hosted models. Otherwise private sets are scored by code checks only, or by a local judge reported separately.
+
+**Clarification.** Two rates: unnecessary clarification on every case outside `underspecified` (target near zero), and resolution on `underspecified` cases (A17).
+
+**Trajectories.** Tool choice, call counts, and loops are diagnostics and budgets, not pass or fail. A case never fails only because the agent took a different valid path. A forbidden tool call or a policy violation fails the case whatever the answer (A18).
+
+**Service objectives.** After the M1.7 baseline, `docs/SERVICE_OBJECTIVES.md` sets measured targets: a correctness floor, abstention rate, p95 latency and time to first token, cost per question on the hosted model, and later availability (A16).
+

@@ -70,7 +70,7 @@ The corpus manifest and fetch script ([ADR 0020](adr/0020-data-and-model-governa
 ### M1.7: Fixed pipeline baseline
 
 Always search, then answer from the retrieved passages. Rejects answers that cite unretrieved passages. Measured on the eval set.
-**Exit:** a baseline eval report for each model and tool-call method.
+**Exit:** a baseline eval report for each model and tool-call method; `docs/SERVICE_OBJECTIVES.md` written from the baseline numbers.
 
 ### M1.8: Agent loop
 
@@ -79,7 +79,7 @@ The model decides when and what to search. Bounded loop, context assembly, hard 
 
 ### M1.9: CLI, feedback, comparison, and review
 
-CLI client (Typer); per-answer feedback with a script that turns bad answers into draft cases; the LLM judge, checked against the owner's labels; the four-way comparison (pipeline vs agent × two tool-call methods); cases grown to ~25 per category; a private eval set over a personal folder in `evals/private/`; the system card.
+CLI client (Typer); per-answer feedback with a script that turns bad answers into draft cases; the LLM judge, checked against the owner's labels; the four-way comparison (pipeline vs agent × two tool-call methods); cases grown to ~20 per category, after an error-analysis pass on the M1.7 failures; a private eval set over a personal folder in `evals/private/`; the system card.
 **Exit:** comparison report, system card, milestone review, and release `v0.1.0`.
 
 ### After milestone 1: framework comparison
@@ -103,7 +103,7 @@ Versioned REST API, SSE events, idempotency keys, error envelope, scheduled and 
 
 ### M2.3: Trace viewer and CI eval gate
 
-Langfuse and Phoenix, each as an optional Compose profile, compared on the same traces and chosen by the criteria in the [observability spec](OBSERVABILITY_SPEC.md#trace-viewer-m23); the choice goes in an ADR. Metrics exported over OTLP. The public eval set runs in CI and fails the PR on a regression past a threshold set from the milestone 1 baseline.
+Langfuse and Phoenix, each as an optional Compose profile, compared on the same traces and chosen by the criteria in the [observability spec](OBSERVABILITY_SPEC.md#trace-viewer-m23); the choice goes in an ADR. Metrics exported over OTLP. The public eval set runs in CI and fails the PR when a paired comparison with the milestone 1 baseline (exact McNemar test on the whole set) shows a significant regression.
 **Exit:** a bad run can be diagnosed from its trace and records alone; a deliberate quality regression fails CI.
 
 ## Milestone 3: multiple users

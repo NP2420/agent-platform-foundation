@@ -56,24 +56,23 @@ Methodology and reasons are in [ADR 0017](adr/0017-eval-first.md).
 - **Held-out test:** run only at milestone reviews and for model or prompt decisions.
 - **Regression:** every fixed bug becomes a permanent case.
 
-About 25 test cases per category, starting from about 10. Every reported rate carries a 95% confidence interval and its sample size.
+About 20 test cases per category, about 160 in total, starting from about 10. Every reported rate carries a Wilson 95% confidence interval and its sample size ([ADR 0017 amendment](adr/0017-eval-first.md#amendment-2026-11-27)).
 
 ### File-agent cases
 
-Each milestone 1 case names the question, the expected answer facts, the source passages that support them, and the case type:
+Each milestone 1 case names the question, the expected answer facts, the source passages that support them, and its category. Eight categories in three families:
 
-- **answerable:** a fact stated in one passage;
-- **multi-passage:** needs two or more passages combined;
-- **version-specific:** the answer differs between document versions (PostgreSQL 18 vs 19, or two revisions of a manual), and the question states the version;
-- **no answer:** the corpus doesn't contain it, so the agent must say so;
-- **misleading:** the question assumes something false;
-- **injection:** a document contains instructions aimed at the model.
+- **Answer correctly.** *single-source*: a fact stated in one passage. *synthesis*: needs two or more passages combined. *version-sensitive*: the answer differs between document versions (PostgreSQL 18 vs 19, or two revisions of a manual), and the question names the version.
+- **Know its limits.** *unanswerable*: in the corpus's domain, but the corpus doesn't say, so the agent must say so. *false premise*: the question assumes something false. *out of scope*: outside the corpus's domain altogether.
+- **Robustness.** *underspecified*: needs a clarifying question, or an answer with stated assumptions. *injected content*: a document contains instructions aimed at the model.
+
+Most questions are phrased as a service technician would ask them; synthesis and version-sensitive cases lean toward an engineer's. The categories are revised after an error-analysis pass on the M1.7 baseline.
 
 Across types, some cases hinge on exact identifiers (part numbers, model numbers, error codes), because embedding models can lose case and punctuation.
 
 ## Metrics
 
-Report per task category, not one overall number:
+Report per category, with intervals, and for the whole set. Per-category numbers are directional; only whole-set paired comparisons gate anything.
 
 - task success;
 - answer accuracy against the expected facts;
@@ -81,9 +80,10 @@ Report per task category, not one overall number:
 - abstention: says "not supported" on no-answer cases, and doesn't on answerable ones;
 - retrieval recall: whether the supporting passage was among those retrieved (separates search failures from reasoning failures);
 - retrieval quality per arm, measured without generation in M1.6: recall@k, MRR, and latency per query, plus index size, build time, VRAM for embedding and reranker models, and hosted cost for contextual retrieval ([ADR 0019](adr/0019-search-architecture.md));
-- tool selection precision and recall;
+- clarification: unnecessary-clarification rate outside `underspecified` (target near zero), and resolution rate on `underspecified`;
+- tool selection precision and recall (a diagnostic: a different valid path never fails a case);
 - argument validity and semantic correctness;
-- policy compliance and unauthorised attempts;
+- policy compliance and unauthorised attempts (any violation fails the case, whatever the answer);
 - hallucinated tool calls or results;
 - final-answer faithfulness, where there is a reference;
 - recovery after transient failures;
@@ -98,7 +98,7 @@ Always include the sample size and failure examples. Never compare models across
 
 Prefer exact and schema checks, then reference-based graders. Use LLM judges only where they are justified, calibrate them against a human-reviewed sample, and track drift. An LLM judge is never the only evidence for security behaviour.
 
-For milestone 1: code checks score citations (exist, and were retrieved), abstention, and retrieval recall. An LLM judge scores answer correctness against the expected facts with a written rubric. Its scores count only after it agrees well enough with the owner's labels on a sample; the agreement rate is reported with every run.
+For milestone 1: code checks score citations (exist, and were retrieved), abstention, and retrieval recall. An LLM judge scores answer correctness against the expected facts with a written rubric, as pass or fail per dimension. Its scores count only after calibration against the owner's labels, reported as true-positive and true-negative rates with every run. Model, prompt, and decoding are pinned; unparseable verdicts are judge errors. The owner re-labels a blind sample a week later, and that self-consistency is reported too. The hosted judge follows the hosted-data rules: never `restricted` content, `internal` only where the folder's policy allows.
 
 ### Tooling
 
@@ -106,7 +106,7 @@ Our own harness, with cases as versioned JSONL. A time-boxed study in M1.3 ports
 
 ## Regressions
 
-Prompts, model profiles, tool schemas, the scheduler, and context construction can all change agent quality. Keep a fast smoke suite and a larger manual or scheduled suite. Set thresholds after the first measured baseline, not before. Critical safety regressions block a release whatever the aggregate score.
+Prompts, model profiles, tool schemas, the scheduler, and context construction can all change agent quality. Keep a fast smoke suite and a larger manual or scheduled suite. Set thresholds after the first measured baseline, not before. From M2.3 the CI gate compares each change with the baseline on the whole public set, paired case by case (exact McNemar test). On about 160 cases it reliably detects a change of about 10 points, not 5. Critical safety regressions block a release whatever the aggregate score.
 
 ## Failure-injection scenarios
 
