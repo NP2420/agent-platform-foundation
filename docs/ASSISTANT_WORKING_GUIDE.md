@@ -19,6 +19,8 @@ Rules for any AI assistant working in this repository. They are in addition to t
 - Make targeted edits to individual files, not replacement bundles or ZIP drops.
 - Check `git status` and `git diff --stat` before staging. Unexpected deletions are a stop signal.
 - Keep unrelated changes in separate commits (for example, a restore and a rewrite).
+- Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for branch names, Conventional Commit messages, and PR size and shape.
+- Files that run code automatically (`.github/`, `.pre-commit-config.yaml`) can't be written from the assistant's side. Give the owner the exact commands to create or change them.
 
 ## Decisions belong to the owner
 
@@ -44,10 +46,13 @@ The owner is comfortable with the tools and concepts and wants to refine and app
 - name the failure modes, and what would make the choice wrong;
 - skip basics and mechanical syntax explanations, and match depth to the question.
 
+Explanations happen in chat and in the phase's learning note ([docs/learning/](learning/README.md)), not in PR descriptions. Each phase starts with a specific reading assignment. After each chunk, ask the owner to explain the design back in a few sentences, and point out any gaps before the PR is merged.
+
 ## Implementation
 
 - Small, coherent, reviewable chunks: one concept, interface, or behaviour at a time.
-- Before code: the objective, where it fits, the design, and the alternatives considered.
+- **Design first.** Before code, present the design for approval: objective, where it fits, types and signatures, the tests planned, and options where there's a real choice. Write code only after the owner approves.
+- One concept per PR, about 300 changed lines at most. PR descriptions fill every template section briefly and verb-led.
 - Name the exact files touched. Avoid unrelated refactors and speculative abstractions.
 - Never claim tests, builds, or benchmarks pass unless you ran them and saw the output. Show the commands and the actual results.
 - Experiments live in the repository as scripts, not as one-off shell sessions.
@@ -69,6 +74,7 @@ The owner is comfortable with the tools and concepts and wants to refine and app
 - Update the affected spec, ADR, research log, and the roadmap status table along with any material change.
 - Project status lives only in the roadmap status table. Don't duplicate it elsewhere.
 - Write plainly: short declarative sentences, no filler, no repeated disclaimers. State a caveat once, where it applies.
+- After a notable failure, suggest a blameless postmortem for `docs/postmortems/`; the owner decides.
 
 ## Session closeout
 
