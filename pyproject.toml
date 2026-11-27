@@ -1,6 +1,6 @@
 [project]
 name = "agent-platform"
-version = "0.1.0"
+version = "0.0.0"
 description = "Self-hosted agent platform built to practise production-grade AI engineering."
 readme = "README.md"
 license = "Apache-2.0"
@@ -22,6 +22,9 @@ build-backend = "uv_build"
 
 [tool.uv]
 required-version = ">=0.13.8,<0.14"
+# Supply-chain cooldown: never resolve a release younger than 7 days (ADR 0021).
+# Override per package with exclude-newer-package for an urgent security fix.
+exclude-newer = "7 days"
 
 [tool.ruff]
 line-length = 100

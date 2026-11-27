@@ -12,12 +12,12 @@ This table is the single place that tracks project status.
 | Phase 0: inference topology | Done | Windows-hosted Ollama over WSL mirrored networking ([ADR 0010](adr/0010-windows-hosted-ollama-initial-deployment.md)) |
 | Phase 0: local model screening | Done for now | T1–T4 pass for both 4B models. To 32K context, Nemotron stays fully on GPU; Qwen3 4B only to 8K. See [benchmarks](research/OLLAMA_MODEL_BENCHMARKS_2026-11-25.md). Quality comparison continues in the milestone 1 eval set. |
 | Phase 0: goal and scope | Done | Agreed 2026-11-26: [charter](PROJECT_CHARTER.md), ADRs [0011](adr/0011-file-agent-reference-use-case.md)–[0013](adr/0013-pull-request-workflow.md) |
-| Repository setup | Done | Public on GitHub, Apache-2.0, noreply authorship, `master` protected by a ruleset requiring `lint, types, tests`, secret scanning with push protection |
-| **Milestone 1** | In progress | M1.1 done. Recording the agreed decisions (PRs 1–5) before M1.2. |
+| Repository setup | Done | Public on GitHub, Apache-2.0, noreply authorship, `master` protected by a ruleset, secret scanning with push protection. Supply chain and releases per [ADR 0021](adr/0021-supply-chain-and-releases.md) once its `.github/` files and GitHub App are in place. |
+| **Milestone 1** | In progress | M1.1 done. Agreed decisions recorded (2026-11-27), as amended by the [decision audit](research/DECISION_AUDIT_2026-11-27.md). Next: M1.2. |
 
 **Next steps**
 
-1. Finish recording the agreed decisions, as amended by the [decision audit](research/DECISION_AUDIT_2026-11-27.md): runtime and model; observability, logging, audit and retention; retrieval and data; security and identity; CI hardening and releases.
+1. Apply [ADR 0021](adr/0021-supply-chain-and-releases.md)'s `.github/` files, GitHub App, `release` environment, and required checks.
 2. M1.2: design the domain types and run state machine for approval, after the [phase reading](LEARNING_PATH_AND_SOURCES.md#reading-by-phase).
 
 Carried over from model screening, for M1.3 and M1.4: rerun the thinking-on context test with `--num-predict 512`; record Ollama's flash-attention and KV-cache settings; rerun the one stalled Nemotron row.
@@ -171,7 +171,7 @@ Structured execution requests, per-run workspaces, worker identity, resource and
 
 ## Every milestone ends with
 
-- a release: semantic version tag, changelog, release notes, and a software bill of materials;
+- a release: merging the open release-please PR produces the semantic version tag, changelog, release notes, and an SBOM ([ADR 0021](adr/0021-supply-chain-and-releases.md));
 - the release review below, scoped to that milestone;
 - a learning note.
 
