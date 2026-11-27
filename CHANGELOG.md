@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/NP2420/agent-platform-foundation/compare/v0.1.1...v0.1.2) (2026-11-27)
+
+
+### Documentation
+
+* add a docs index and give each fact one home ([#18](https://github.com/NP2420/agent-platform-foundation/issues/18)) ([59369c7](https://github.com/NP2420/agent-platform-foundation/commit/59369c7bd7ebdaa21f3ed0af66853c5b269f97f1))
+
 ## [0.1.1](https://github.com/NP2420/agent-platform-foundation/compare/v0.1.0...v0.1.1) (2026-11-27)
 
 

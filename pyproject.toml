@@ -1,6 +1,6 @@
 [project]
 name = "agent-platform"
-version = "0.1.1"
+version = "0.1.2"
 description = "Self-hosted agent platform built to practise production-grade AI engineering."
 readme = "README.md"
 license = "Apache-2.0"
