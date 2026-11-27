@@ -10,10 +10,15 @@ dependencies = []
 
 [dependency-groups]
 dev = [
+    "coverage>=7.15.0",
     "pre-commit>=4.7.0",
     "pyright[nodejs]>=1.1.414",
     "pytest>=9.2.0",
     "ruff>=0.17.6",
+]
+# Only for the licence check in CI, which runs without the dev group.
+licenses = [
+    "pip-licenses>=5.5.0",
 ]
 
 [build-system]
@@ -62,3 +67,11 @@ venv = ".venv"
 testpaths = ["tests"]
 addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
 xfail_strict = true
+
+[tool.coverage.run]
+branch = true
+source = ["agent_platform"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
