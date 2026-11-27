@@ -57,22 +57,27 @@ Case format, dev / held-out test / regression splits, code-based scoring (citati
 Provider-neutral contract; Ollama, Anthropic API, and fake adapters; both tool-call methods (native tool calling and schema-constrained JSON); timeouts, bounded retries with jitter, normalised errors, per-call tokens, cost, and latency. Model registry with licences, and profiles pinned by digest. Recorded responses in CI; a live suite run in WSL. Prompts as versioned files. Choose the hosted model and spend limit.
 **Exit:** contract tests pass on recordings and live against both real providers.
 
-### M1.5: Threat model, tools, policy, and file search
+### M1.5: Threat model, tools, policy, and audit
 
-First the threat model (OWASP LLM Top 10 and STRIDE). Then the tool registry, policy checks, risk tiers, classification, and hash-chained audit records in a local JSONL file, and the file-search and file-read tools: extraction for Markdown, text, code, and PDF; passages with citations; path allowlist and the always-blocked list. Build the public corpus: equipment manuals and the PostgreSQL 18 and 19 manuals.
-**Exit:** contract, permission, path-escape, classification, and malformed-input tests pass.
+First the threat model (OWASP LLM Top 10 and STRIDE). Then the tool registry, policy checks, risk tiers, classification, hash-chained audit records in a local JSONL file, and the `read_file` tool with the path allowlist and the always-blocked list.
+**Exit:** contract, permission, path-escape, classification, malformed-input, and audit-chain tests pass.
 
-### M1.6: Fixed pipeline baseline
+### M1.6: Corpus, extraction, and search
+
+The corpus manifest and fetch script ([ADR 0020](adr/0020-data-and-model-governance.md)): equipment manuals and the PostgreSQL 18 and 19 manuals. Extraction for Markdown, text, code, text-based PDF (pypdf vs pdfplumber), and HTML. Structure-aware chunking. PostgreSQL 18 in Docker Compose with pg_textsearch and pgvector, through psycopg 3. `search_files` with passage IDs, token budgets, and freshness checks. Then the staged retrieval comparison, on retrieval metrics alone ([ADR 0019](adr/0019-search-architecture.md)).
+**Exit:** a retrieval report per arm (recall@k, MRR, latency, VRAM) on the dev set, and the winning arm recorded; tests cover re-indexing, freshness, hash re-checks, and passage lineage.
+
+### M1.7: Fixed pipeline baseline
 
 Always search, then answer from the retrieved passages. Rejects answers that cite unretrieved passages. Measured on the eval set.
 **Exit:** a baseline eval report for each model and tool-call method.
 
-### M1.7: Agent loop
+### M1.8: Agent loop
 
 The model decides when and what to search. Bounded loop, context assembly, hard budget caps on by default, run events, cancellation through `CANCELLING`, and concurrent tool calls under a fixed cap.
 **Exit:** tests cover completion, multi-turn runs, malformed responses, budget exhaustion, timeouts, and cancellation; an agent eval report.
 
-### M1.8: CLI, feedback, comparison, and review
+### M1.9: CLI, feedback, comparison, and review
 
 CLI client (Typer); per-answer feedback with a script that turns bad answers into draft cases; the LLM judge, checked against the owner's labels; the four-way comparison (pipeline vs agent × two tool-call methods); cases grown to ~25 per category; a private eval set over a personal folder in `evals/private/`; the system card.
 **Exit:** comparison report, system card, milestone review, and release `v0.1.0`.
@@ -88,7 +93,7 @@ Rebuild the milestone 1 agent on LangGraph and on Pydantic AI, time-boxed, and c
 ### M2.1: PostgreSQL persistence
 
 Schema, migrations, repositories, transaction boundaries, run, step, and event persistence, idempotency records, document index tables, and the `audit_events` table with insert-and-select-only grants, migrated from the M1 JSONL with the chain intact. Review the API and data-model specs first. Then the durability experiment from [ADR 0018](adr/0018-durable-execution-decided-in-m2.md): our own step log, DBOS, and Temporal, each killed mid model call, mid tool call, and during an approval wait.
-**Decide:** PostgreSQL 18 vs 19 ([research note](research/POSTGRES_18_VS_19.md)); psycopg 3 vs asyncpg.
+**Decide:** keep psycopg 3 or switch to asyncpg, by the workload benchmark in the [PostgreSQL note](research/POSTGRES_18_VS_19.md#workload-benchmark) (the version is already 18).
 **Exit:** tests cover conflicts, restart recovery, uniqueness, and concurrent access; the durability mechanism is chosen and recorded in an ADR, with the experiment's results.
 
 ### M2.2: API and event streaming

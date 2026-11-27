@@ -1,6 +1,6 @@
 # Tools
 
-**Status:** Native and MCP tools are accepted. Contracts are finalised in M1.5.
+**Status:** Native and MCP tools are accepted. Contracts are finalised in M1.5; `search_files` in M1.6 ([ADR 0019](adr/0019-search-architecture.md)).
 
 ## Responsibilities
 
@@ -36,7 +36,7 @@ Each invocation carries an invocation ID, run and step IDs, caller identity, too
 
 **MCP tools.** Discovered and called through an MCP client adapter. MCP is an interoperability protocol, not our scheduler, database, authorisation system, or isolation boundary. Server metadata and outputs are untrusted. A server's own description of a tool grants it nothing.
 
-**File tools.** The first real tools, for the reference use case ([ADR 0011](adr/0011-file-agent-reference-use-case.md)). `search_files` runs full-text search over the caller's approved folders and returns passages with path, section, line range, modification time, and document version where known. `read_file` returns a bounded passage. Both resolve every path against the caller's grants after canonicalisation, refuse symlinks that leave a grant, and refuse the always-blocked list ([security spec](SECURITY_SPEC.md#file-access)). File contents are untrusted input to the model.
+**File tools.** The first real tools, for the reference use case ([ADR 0011](adr/0011-file-agent-reference-use-case.md)). `search_files` searches the caller's approved folders with the retrieval arm chosen in M1.6 and returns passages packed into a token budget, highest-ranked first. Each passage carries an ID, path, page or section, line range, document version and applicability, and modification time. Before searching, changed files in `on_search` folders are re-indexed; a passage about to be cited is re-checked by hash. The model cites passage IDs, which are validated against the retrieved set as the answer streams. `read_file` returns a bounded passage. Both resolve every path against the caller's grants after canonicalisation, refuse symlinks that leave a grant, and refuse the always-blocked list ([security spec](SECURITY_SPEC.md#file-access)). File contents are untrusted input to the model.
 
 **Execution tools** (later). Filesystem, shell, browser, and code go through the execution broker. There is never a generic `shell` tool inside the API or runtime process.
 

@@ -27,7 +27,9 @@ Polyglot does not mean microservices. Another language becomes a separate compon
 
 ## Persistence
 
-**Proposed:** PostgreSQL with SQLAlchemy 2.x and Alembic. The major version (18 or 19) is decided in M2.1 ([research note](research/POSTGRES_18_VS_19.md)). Driver: psycopg 3 or asyncpg, chosen on compatibility, migrations, typing, and a realistic benchmark rather than synthetic throughput.
+**Accepted:** PostgreSQL 18 from M1.6, with pg_textsearch (BM25) and pgvector (HNSW) for search ([ADR 0019](adr/0019-search-architecture.md)). Driver: psycopg 3, sync and async; M2.1's workload benchmark compares it with asyncpg. **Proposed:** SQLAlchemy 2.x and Alembic.
+
+**Retrieval:** pypdf and pdfplumber compared for PDF text; embedding candidates nomic-embed-text and Qwen3-Embedding-0.6B; reranker candidates bge-reranker-v2-m3 and Qwen3-Reranker-0.6B. All registered with licences and digests.
 
 **Alternatives:** SQLModel, raw psycopg, or Kysely/Drizzle if a TypeScript service ever owns a database. No second database without a specific workload.
 
@@ -84,7 +86,7 @@ Typer, as a thin client: it parses arguments, calls the runtime (an API client f
 | Redis | A measured need for caching, ephemeral coordination, or a queue |
 | Kafka / NATS | Independent consumers or fan-out outgrow PostgreSQL-backed events |
 | Kubernetes | Several services and replicas justify the operational overhead |
-| Vector DB | Retrieval scale or latency outgrows PostgreSQL (full-text, pgvector) |
+| Separate vector or search engine | Retrieval scale or latency outgrows PostgreSQL (pg_textsearch, pgvector), or a language needs an analyser PostgreSQL lacks (Japanese, M7) |
 | Go / Rust | A profiled bottleneck, native integration, or sandbox requirement |
 | LangGraph, Pydantic AI | The post-milestone-1 comparison shows one beats our own loop on the same evals by enough to justify the dependency |
 | LiteLLM | Multi-provider routing becomes painful in our own adapters |

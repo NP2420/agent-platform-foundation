@@ -1,6 +1,6 @@
 # ADR 0007: PostgreSQL as System of Record
 
-- **Status:** Accepted; major version and driver open (decided in M2.1)
+- **Status:** Accepted. Version: PostgreSQL 18, from M1.6 ([ADR 0019](0019-search-architecture.md)). Driver: psycopg 3 from M1.6, rechecked against asyncpg in M2.1.
 - **Date:** 2026-11-25
 
 ## Context

@@ -1,6 +1,6 @@
 # Research Note: PostgreSQL 18 vs 19
 
-**Snapshot:** 2026-11-25 · **Decision:** Open; decided in M2.1.
+**Snapshot:** 2026-11-25 · **Decision:** 18, decided 2026-11-27. pg_textsearch, chosen for BM25 search, supports PostgreSQL 17 and 18 only ([ADR 0019](../adr/0019-search-architecture.md)). Revisit 19 when pg_textsearch supports it. The analysis below is kept as the record.
 
 ## Facts
 

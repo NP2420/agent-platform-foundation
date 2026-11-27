@@ -50,7 +50,7 @@ Two ways to get tool calls out of a model, both implemented in M1.4 behind the s
 - **Native tool calling:** tool definitions go in the provider's tool field, and calls come back in its structured tool-call format.
 - **Schema-constrained JSON:** the model is asked for one JSON object matching a schema that covers every allowed action (tool calls, `ask_user`, final answer), with the server's structured-output constraint where the provider supports one.
 
-Each profile names its method. Small local models differ in which method they handle reliably, so the choice is made per model by the M1.6–M1.8 eval, never assumed. Either way, the result is an untrusted proposal that is validated before policy sees it.
+Each profile names its method. Small local models differ in which method they handle reliably, so the choice is made per model by the M1.7–M1.9 eval, never assumed. Either way, the result is an untrusted proposal that is validated before policy sees it.
 
 ## Request and response
 
