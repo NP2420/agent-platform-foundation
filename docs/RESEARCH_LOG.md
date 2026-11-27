@@ -9,7 +9,7 @@ Dated findings that shaped decisions. Each entry is short and links to the resea
 | R-004 | Keep psycopg 3, or switch to asyncpg? | Compatibility, migrations, concurrency benchmark | M2.1 |
 | R-005 | Which local models, for which profiles? | Versioned tool-use suite, context scaling, resource use | M1.9 |
 | R-006 | Which sandbox backend? | Threat model and negative tests on a Linux host | M5.1 |
-| R-007 | Which MCP SDK and protocol revision? | Release notes, migration guide, contract test | M4.4 |
+| R-007 | Which MCP SDK version? (Protocol: 2026-07-28 is current; re-check.) | Release notes, migration guide, contract test | M4.4 |
 | R-008 | Which durable execution mechanism: our own step log, DBOS, or Temporal? | Failure-injection experiment ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)) | M2.1 |
 | R-009 | Do tiered models beat one model? | Same cases and hardware, cost vs quality | Later |
 | R-010 | Which trace viewer: Langfuse or Phoenix? | Same traces in each; readability, eval linking, measured resource cost | M2.3 |

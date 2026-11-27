@@ -112,8 +112,8 @@ Langfuse and Phoenix, each as an optional Compose profile, compared on the same 
 
 ### M3.1: Identity and authorisation
 
-Local accounts, password or token authentication, sessions, per-user folder grants, admin role. File permissions are enforced by the application's authorisation layer, because the agent runs as one OS user.
-**Exit:** tests show one user's runs, files, and results are invisible to another.
+Local accounts with Argon2id passwords, scoped API tokens, sessions with CSRF protection, per-user folder grants, admin role ([security spec](SECURITY_SPEC.md#identity-m31)). File permissions are enforced by the application's authorisation layer, because the agent runs as one OS user, and row-level security backs it in PostgreSQL.
+**Exit:** tests show one user's runs, files, and results are invisible to another, including with an application check deliberately removed (RLS still holds).
 
 ### M3.2: Approvals and web inspector
 
@@ -136,8 +136,8 @@ Summaries and reports written to a per-user output folder only.
 
 ### M4.2: Orchestrator
 
-Plans as data, DAG validation, dependency resolution, bounded concurrency, failure policies, cancellation ([runtime spec](RUNTIME_SPEC.md#orchestration)). A bulk file reorganisation is the first real plan.
-**Exit:** tests prove validation, dependency order, bounded parallelism, the failure policy, and clean cancellation.
+Plans as data, DAG validation, dependency resolution, bounded concurrency, failure policies, cancellation ([runtime spec](RUNTIME_SPEC.md#orchestration)). A bulk file reorganisation is the first real plan. Then the prompt-injection pattern: plan-then-execute vs a quarantined reader, compared on injected-content cases and adaptive attacks ([security spec](SECURITY_SPEC.md#prompt-injection)).
+**Exit:** tests prove validation, dependency order, bounded parallelism, the failure policy, and clean cancellation; the injection pattern is chosen in an ADR, and no `external`-tier tool ships before it.
 
 ### M4.3: File organisation
 
@@ -146,7 +146,7 @@ Rename, move, and tag, run as orchestrated plans with a preview, approval, an un
 
 ### M4.4: MCP
 
-MCP client adapter, server lifecycle, trust policy. MCP tools go through the same registry, policy, and dispatcher path.
+MCP client adapter, server lifecycle, trust policy ([security spec](SECURITY_SPEC.md#mcp-trust-m44)). MCP tools go through the same registry, policy, and dispatcher path. First-party and remote servers only; third-party local servers wait for the M5 sandbox.
 **Exit:** a test MCP server's tool runs under the same policy and audit as a native tool.
 
 ## Milestone 5: sandboxed code execution

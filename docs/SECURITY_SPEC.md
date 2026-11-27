@@ -1,6 +1,6 @@
 # Security and Execution Isolation
 
-**Status:** The security boundary is an accepted requirement. The sandbox backend is open and must be selected and tested on a plain Linux host before any code execution is enabled.
+**Status:** The security boundary is an accepted requirement. Prompt-injection, identity, and MCP trust rules accepted 2026-11-27. The sandbox backend is open and must be selected and tested on a plain Linux host before any code execution is enabled.
 
 ## Stance
 
@@ -92,6 +92,41 @@ Tests: path traversal, symlink and junction escape, case tricks on Windows paths
 ## Sandbox
 
 Candidates and trade-offs are in [research/LOCAL_SANDBOX_OPTIONS.md](research/LOCAL_SANDBOX_OPTIONS.md). A rootless container reduces some risk but proves nothing against hostile code. Selection requires a configuration review and negative tests on the actual host.
+
+## Prompt injection
+
+Any text the model reads can carry instructions: user input, documents, web pages, tool output, MCP metadata. No filter makes that safe. *The Attacker Moves Second* (Nasr, Carlini, Tramèr and others; USENIX Security 2026) took 12 published defences, including detection classifiers, from near-zero attack success in their own papers to over 90% for most under adaptive attacks; human red-teamers beat all of them ([decision audit, A12](research/DECISION_AUDIT_2026-11-27.md#a12-injection-classifier--change-a-signal-not-a-control)).
+
+**What carries the weight** is structure, not detection:
+
+- policy outside the model, risk tiers, and deny-by-default grants, so an injected instruction can only ask for what the run was already allowed to do;
+- approvals bound to the exact action for anything beyond `read`;
+- untrusted content delimited and labelled with its provenance, and never allowed to change policy, grants, or budgets;
+- `restricted` content never leaves the machine, so an injection can't exfiltrate it to a hosted model.
+
+**The classifier is telemetry.** An injection classifier may score retrieved and tool content. A high score is logged and alerted, and the content becomes a candidate eval case. It never blocks, allows, or changes anything, and no document counts it as a control.
+
+**Before external-tier tools (M4).** No `external`-tier tool ships until one structural pattern is in place. M4.2 compares two candidates on the injected-content eval cases plus adaptive attacks, and records the choice in an ADR:
+
+- **plan-then-execute:** the tool sequence is fixed as a validated plan before any untrusted content is read, so content can change data but not which actions run;
+- **quarantined reader:** a model with no tools reads untrusted content and returns only structured, validated fields to the planning model.
+
+CaMeL-style data-flow capabilities (arXiv 2503.18813) are the reference if neither is enough.
+
+## Identity (M3.1)
+
+- **Passwords:** Argon2id via `argon2-cffi`, at or above OWASP's minimum (19 MiB of memory, 2 iterations, parallelism 1), tuned upward to the latency the login path can afford. The parameters are stored with each hash so they can be raised later.
+- **API tokens:** random, shown once, stored only as a hash, with a recognisable prefix for secret scanning, explicit scopes, an expiry, and revocation. A token never grants more than its owner holds.
+- **Sessions:** cookies marked `HttpOnly`, `Secure`, and `SameSite`, the ID rotated at login, idle and absolute timeouts. The values are set in M3.1 from the OWASP Session Management Cheat Sheet. Every state-changing request is CSRF-protected.
+- **Authorisation, twice.** The application checks every request against the caller's grants. PostgreSQL row-level security on every owned table is a second layer, so a missing check in code still can't return another user's rows.
+- **Connector credentials (later):** per-user OAuth with minimal scopes, refresh tokens encrypted at rest, never a shared service account acting for everyone.
+
+## MCP trust (M4.4)
+
+- **Protocol:** pin the revision (2026-07-28 is current; re-check at M4.4) and the SDK version.
+- **Tokens:** follow the spec's requirements. Clients send the `resource` parameter; servers accept only tokens issued for them. Tokens are never passed through from one service to another.
+- **Third-party servers are supply chain.** Over 30 CVEs against MCP servers were filed in January–February 2026. Each server is pinned by version and digest, reviewed before use, given a per-server tool allowlist, and run with least privilege. Its tool descriptions are untrusted text.
+- **Until M5:** only first-party servers and remote servers reached over HTTP with scoped tokens. A third-party server that runs locally is someone else's code with this user's privileges, so it waits until it can run inside the M5 sandbox.
 
 ## Human approval
 

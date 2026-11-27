@@ -73,7 +73,7 @@ Distinguish: schema invalid, unknown or unavailable tool, not authorised, approv
 ## MCP requirements
 
 - Use the official Python SDK first; the TypeScript SDK is for Node-native servers.
-- Pin the SDK version and protocol revision, and check migration notes when implementing.
+- Pin the SDK version and protocol revision, and check migration notes when implementing. Token, trust, and local-server rules are in the [security spec](SECURITY_SPEC.md#mcp-trust-m44).
 - Write protocol contract tests.
 - Keep the server session lifecycle separate from the run lifecycle.
 - Scope server connections and allowed tools to the requesting identity and run.

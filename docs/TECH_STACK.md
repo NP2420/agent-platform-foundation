@@ -41,6 +41,10 @@ Adapters in milestone 1: Ollama, Anthropic API (optional, prepaid Console balanc
 
 **Later options:** vLLM when there are concurrent users (load-tested in M3), llama.cpp, other hosted providers, LiteLLM. Models are pinned by digest and listed in a licence registry ([model spec](MODEL_SPEC.md#model-registry-licences-and-pinning)).
 
+## Identity
+
+**Proposed for M3.1:** `argon2-cffi` for Argon2id password hashing; tokens and sessions built on the API layer, with rules in the [security spec](SECURITY_SPEC.md#identity-m31).
+
 ## Tools
 
 Native Python tools go through our dispatcher. MCP uses the official Python SDK, or the TypeScript SDK for Node servers. Pin the SDK and protocol revision. MCP is interoperability, not scheduling, storage, or authorisation.
