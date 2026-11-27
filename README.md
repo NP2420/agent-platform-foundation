@@ -26,6 +26,7 @@ Start with the charter, architecture, and roadmap. Read the specifications when 
 | [Architecture](docs/ARCHITECTURE.md) | Components, trust boundaries, request flow, source layout |
 | [Tech stack](docs/TECH_STACK.md) | Technology choices, alternatives, and when to revisit them |
 | [Development roadmap](docs/DEVELOPMENT_ROADMAP.md) | Current status, phases, and exit gates |
+| [Contributing](CONTRIBUTING.md) | Workflow, branches, commits, PRs, local checks |
 | [Assistant working guide](docs/ASSISTANT_WORKING_GUIDE.md) | How AI assistants should work in this repository |
 | [Learning path](docs/LEARNING_PATH_AND_SOURCES.md) | Books and primary sources, mapped to phases |
 
@@ -41,6 +42,7 @@ Requires [uv](https://docs.astral.sh/uv/) 0.13.x. From WSL, in a clone on the Li
 
 ```bash
 uv sync                      # Python 3.15 and dev tools, exactly as locked
+uv run pre-commit install    # once per clone: Ruff on every commit
 uv run ruff format --check . # formatting
 uv run ruff check .          # lint
 uv run pyright               # types (strict)
@@ -64,7 +66,7 @@ A proposal does not become accepted by being written down. Change a status only 
 ## Repository rules
 
 - The repository is public. Personal files, private eval sets (`evals/private/`), secrets, and model weights never enter it.
-- Changes arrive as pull requests; see [ADR 0013](docs/adr/0013-pull-request-workflow.md).
+- Changes arrive as pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md) and [ADR 0013](docs/adr/0013-pull-request-workflow.md).
 
 - Never commit database volumes or generated artifacts other than eval results.
 - Version-sensitive facts (releases, SDK behaviour, model capabilities) are dated. Recheck them when implementing and record changes in the research log.
