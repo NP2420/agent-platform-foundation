@@ -104,7 +104,7 @@ Any text the model reads can carry instructions: user input, documents, web page
 - untrusted content delimited and labelled with its provenance, and never allowed to change policy, grants, or budgets;
 - `restricted` content never leaves the machine, so an injection can't exfiltrate it to a hosted model.
 
-**The classifier is telemetry.** An injection classifier may score retrieved and tool content. A high score is logged and alerted, and the content becomes a candidate eval case. It never blocks, allows, or changes anything, and no document counts it as a control.
+**The classifier is telemetry.** An injection classifier may score retrieved and tool content. A high score is logged and alerted, and the content becomes a candidate eval case. It never blocks, allows, or changes anything, and no document counts it as a control. Which classifier, and whether we train our own, is a learning project after milestone 1.
 
 **Before external-tier tools (M4).** No `external`-tier tool ships until one structural pattern is in place. M4.2 compares two candidates on the injected-content eval cases plus adaptive attacks, and records the choice in an ADR:
 

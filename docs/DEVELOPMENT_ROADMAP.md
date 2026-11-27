@@ -86,6 +86,10 @@ CLI client (Typer); per-answer feedback with a script that turns bad answers int
 
 Rebuild the milestone 1 agent on LangGraph and on Pydantic AI, time-boxed, and compare both with our own loop on the same eval set: results, code size, typing, tracing, and what each takes control of. Written up as a learning note.
 
+### After milestone 1: injection classifier
+
+A time-boxed learning project. Baseline an open detector (licence checked first), then train our own: logistic regression on embeddings, then a fine-tuned small transformer. Data: the injected-content eval cases, public injection sets, and ordinary manual text as negatives, including warnings that look like instructions. Report precision and recall and the chosen threshold, then attack the classifier adaptively until it breaks. The result is telemetry only ([security spec](SECURITY_SPEC.md#prompt-injection)). Written up as a learning note.
+
 ## Milestone 2: persisted runs, API, and observability
 
 **Delivers:** runs persisted in PostgreSQL and served through a versioned API with streamed events; the tracing backend; evals gating CI.
