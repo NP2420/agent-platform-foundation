@@ -1,5 +1,7 @@
 # Testing and Evaluation
 
+**Status:** Accepted ([ADR 0017](../adr/0017-eval-first.md), amended 2026-11-27). The harness and first cases are built in M1.3.
+
 The platform has two kinds of correctness:
 
 1. **Software correctness:** state transitions, schemas, transactions, concurrency, authorisation, errors, APIs. Deterministic, so assert exact results.

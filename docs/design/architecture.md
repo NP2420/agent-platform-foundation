@@ -1,5 +1,7 @@
 # Architecture
 
+**Status:** The principles and boundaries are accepted ([ADRs 0001–0009](../adr/README.md), [0012](../adr/0012-portable-deployment.md)). Each component is built in the milestone the [roadmap](../project/roadmap.md) gives it; until then this describes the plan.
+
 A Python modular monolith with explicit adapter boundaries. The boxes below are logical components, not services. Everything runs in one process until a concrete need (isolation, scaling, independent deployment) justifies splitting something out.
 
 ## Principles
@@ -147,6 +149,15 @@ Portable by design ([ADR 0012](../adr/0012-portable-deployment.md)): containers,
 
 Four separate records: run events and step records (the truth about runs), audit events (hash-chained security facts), traces (OpenTelemetry, with GenAI conventions), and structured logs and metrics. Metadata and digests by default, never raw content. An LLM trace viewer arrives in M2.3. Details, including retention, are in [observability.md](observability.md).
 
-## Deferred choices
+## Open choices
 
-Python minor version · PostgreSQL major version and driver · ASGI and worker topology · sandbox backend · router policy and fallback · Temporal adoption · artifact storage backend. Each is tracked in an ADR or research note.
+| Choice | Decided |
+|---|---|
+| Durable execution: our own step log, DBOS, or Temporal | M2.1, by experiment ([ADR 0018](../adr/0018-durable-execution-decided-in-m2.md)) |
+| Async database driver: psycopg 3 or asyncpg | M2.1, by workload benchmark ([tech stack](tech-stack.md#persistence)) |
+| ASGI server and worker topology | Not yet scheduled; needed by the API in M2.2 ([API spec](api.md)) |
+| Model routing policy | Only on evidence ([roadmap](../project/roadmap.md#later-only-on-evidence)); no automatic fallback meanwhile ([models](models.md)) |
+| Sandbox backend | M5.1 ([sandbox options](../research/local-sandbox-options.md)) |
+| Artifact storage beyond local disk | When artifacts outgrow local disk ([data model](data-model.md#artifacts)) |
+
+Already decided: Python 3.15 ([ADR 0014](../adr/0014-python-toolchain.md)); PostgreSQL 18 with psycopg 3 ([ADR 0019](../adr/0019-search-architecture.md)).

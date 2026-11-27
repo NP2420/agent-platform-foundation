@@ -2,12 +2,12 @@
 
 One short note per phase, written at the end of it, in the owner's words with the assistant's help. The point is to keep what was learned, not to restate the code.
 
-File name: `phase-NN-topic.md`, e.g. `phase-02-run-state-machine.md`.
+File name: the phase, then the topic, e.g. `m1-2-run-state-machine.md` for M1.2.
 
 ## Template
 
 ```markdown
-# Phase NN: Topic
+# M1.2: Run state machine
 
 ## Read beforehand
 The reading for this phase, and the one idea from it that mattered most.

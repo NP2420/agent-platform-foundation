@@ -1,5 +1,7 @@
 # Tech Stack
 
+**Status:** Given per choice below. Accepted choices link their ADR; the rest are proposals until the owner confirms them.
+
 What we plan to use, why, the credible alternatives, and what would make us reconsider. Exact versions are pinned when each phase starts.
 
 ## Languages
