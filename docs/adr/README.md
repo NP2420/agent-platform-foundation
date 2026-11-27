@@ -24,7 +24,8 @@ One file per material decision. An ADR is never edited to reverse a decision: wr
 | [0018](0018-durable-execution-decided-in-m2.md) | Durable execution, decided by experiment in M2.1 | Accepted |
 | [0019](0019-search-architecture.md) | Search architecture: PostgreSQL 18, staged retrieval arms | Accepted |
 | [0020](0020-data-and-model-governance.md) | Data and model governance | Accepted |
-| [0021](0021-supply-chain-and-releases.md) | Supply chain and releases: Dependabot, cooldown, audit, zizmor, release-please | Accepted |
+| [0021](0021-supply-chain-and-releases.md) | Supply chain and releases: Dependabot, cooldown, audit, zizmor, release-please | Accepted; required checks extended by 0022 |
+| [0022](0022-licences-code-scanning-coverage.md) | Dependency licences, CodeQL, and coverage | Accepted |
 
 ## Writing one
 

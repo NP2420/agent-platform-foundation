@@ -67,12 +67,13 @@ Typer, as a thin client: it parses arguments, calls the runtime (an API client f
 - Tests: pytest; Hypothesis for property and stateful tests, starting with the run state machine; contract tests for providers and MCP.
 - Lint and format: Ruff. Type checking: Pyright in strict mode, the one authoritative checker ([ADR 0015](adr/0015-pyright.md)).
 - Telemetry: structlog for JSON logs, with trace IDs injected from the OpenTelemetry SDK; OTLP over HTTP/protobuf. The trace viewer (Langfuse or Phoenix) is chosen in M2.3; a Collector only when there are two destinations ([observability spec](OBSERVABILITY_SPEC.md)).
+- Coverage: coverage.py with branch coverage, reported in CI, not gated ([ADR 0022](adr/0022-licences-code-scanning-coverage.md)).
 - Evaluation: our own harness and versioned cases in `evals/`.
 
 ## CI and repository
 
 - GitHub, public, Apache-2.0. Feature branches and pull requests; `master` is protected ([ADR 0013](adr/0013-pull-request-workflow.md)).
-- GitHub Actions on Linux, every action pinned to a commit SHA: Ruff, type check, and pytest on every PR; `uv audit` (OSV), zizmor, and a PR-title check; the public eval set once it can run in CI (M2.3). Hosted-model evals run only when a key is configured and never on PRs from forks.
+- GitHub Actions on Linux, every action pinned to a commit SHA: Ruff, type check, and pytest on every PR; `uv audit` (OSV), a runtime-dependency licence check (pip-licenses), CodeQL code scanning, zizmor, and a PR-title check; the public eval set once it can run in CI (M2.3). Hosted-model evals run only when a key is configured and never on PRs from forks.
 - Dependabot for GitHub Actions and uv, with a 7-day cooldown matching `exclude-newer`. release-please for versions, changelog, and releases, with a CycloneDX SBOM attached to each ([ADR 0021](adr/0021-supply-chain-and-releases.md)).
 
 ## Local infrastructure
