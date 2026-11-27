@@ -1,0 +1,30 @@
+name: PR title
+
+# The squash-merged PR title becomes the commit on master, and release-please
+# reads those commits, so titles must follow Conventional Commits.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions: {}
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-title:
+    name: pr title
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check Conventional Commits format
+        env:
+          # Passed through the environment, never interpolated into the script.
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|test|refactor|perf|docs|build|ci|chore)(\([a-z0-9-]+\))?!?: [a-z0-9`].*[^.]$'
+          if ! printf '%s' "$TITLE" | grep -Eq "$pattern"; then
+            echo "::error::PR title must be 'type(scope): summary' in lower case with no full stop; see CONTRIBUTING.md."
+            exit 1
+          fi
