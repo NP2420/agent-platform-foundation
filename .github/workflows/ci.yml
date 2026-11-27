@@ -42,3 +42,23 @@ jobs:
 
       - name: Tests
         run: uv run pytest
+
+  audit:
+    name: audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: "0.13.10"
+          enable-cache: true
+
+      # Known vulnerabilities in every locked dependency (OSV). uv audit is a
+      # preview feature; the pinned uv version keeps its interface stable.
+      - name: Audit dependencies
+        run: uv audit --locked --preview-features audit
+
