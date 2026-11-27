@@ -80,7 +80,7 @@ Report per task category, not one overall number:
 - citation correctness: cited passages exist and actually support the claim;
 - abstention: says "not supported" on no-answer cases, and doesn't on answerable ones;
 - retrieval recall: whether the supporting passage was among those retrieved (separates search failures from reasoning failures);
-- retrieval quality per arm, measured without generation in M1.6: recall@k, MRR, and latency per query, plus index size, build time, and VRAM for embedding and reranker models ([ADR 0019](adr/0019-search-architecture.md));
+- retrieval quality per arm, measured without generation in M1.6: recall@k, MRR, and latency per query, plus index size, build time, VRAM for embedding and reranker models, and hosted cost for contextual retrieval ([ADR 0019](adr/0019-search-architecture.md));
 - tool selection precision and recall;
 - argument validity and semantic correctness;
 - policy compliance and unauthorised attempts;

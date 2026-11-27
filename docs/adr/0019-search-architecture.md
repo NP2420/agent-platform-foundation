@@ -27,7 +27,8 @@ The question is no longer "full-text or embeddings" but which arm wins on our co
 1. keyword (BM25): overlap 0 vs 50 tokens;
 2. keyword plus reranker;
 3. hybrid (BM25 plus vectors, fused with reciprocal rank fusion): nomic-embed-text vs Qwen3-Embedding-0.6B;
-4. hybrid plus reranker, with the winners of stages 1 and 3.
+4. hybrid plus reranker, with the winners of stages 1 and 3;
+5. contextual retrieval on the best arm so far: before indexing, a model writes a 50–100-token note placing each chunk in its whole document, prepended to the chunk for both BM25 and embedding. Public corpus only, written by the hosted model because a whole manual doesn't fit a local model's context. Anthropic reports 49% fewer failed retrievals, or 67% with reranking; that is a vendor claim, and this stage tests it on our corpus.
 
 Reranker candidates: `bge-reranker-v2-m3` and Qwen3-Reranker-0.6B. Each stage carries only its winner forward. M1.7 onwards uses the best arm; the others stay runnable for later comparisons.
 
@@ -41,6 +42,7 @@ Reranker candidates: `bge-reranker-v2-m3` and Qwen3-Reranker-0.6B. Each stage ca
 
 - PostgreSQL moves into milestone 1, so M1.6 adds Docker Compose and a migration tool earlier than planned.
 - The staged comparison costs several index builds. Retrieval-only metrics keep each one cheap: no model generates an answer.
+- Contextual retrieval spends hosted tokens at index time, under the hosted spend limit. Each note is stored with its passage, along with the model and prompt version that wrote it, so lineage covers it ([ADR 0020](0020-data-and-model-governance.md)). Private and restricted files never get hosted notes.
 - Embedding models and rerankers become registry entries with licences and digests ([model spec](../MODEL_SPEC.md#model-registry-licences-and-pinning)).
 - Ollama lowercases nomic-embed-text input, so the eval includes cases that depend on exact part and model numbers. BM25 still matches those exactly.
 - pg_textsearch needs `shared_preload_libraries`, so a managed target must offer it. Cloud SQL and AlloyDB do; others need checking.
