@@ -1,6 +1,6 @@
 # Models: Gateway, Profiles, and Evaluation
 
-**Status:** The provider abstraction and configurable profiles are accepted; one profile (`primary`) for now. Providers, model IDs, profile assignments, and routing policy stay open until benchmarked.
+**Status:** The provider abstraction and configurable profiles are accepted; one profile (`primary`) for now. Both tool-call methods, no automatic fallback, the licence registry, and pinned digests are accepted (2026-11-27). Model IDs, profile assignments, and routing policy stay open until benchmarked.
 
 ## Goals
 
@@ -37,6 +37,21 @@ providers:
 
 More profiles (for example `fast`, `summarizer`, `evaluator`) are added only when a measured need appears: a task category that one model handles too slowly, too expensively, or too poorly. Automatic routing between profiles comes later still.
 
+## Model registry, licences, and pinning
+
+Every model the system can call has a registry entry: provider, model ID, tag, full digest (for local weights), licence, source, the date it was added, and the uses the licence permits. A model whose licence doesn't permit the intended use (commercial use, for example) can't be assigned to a profile. Embedding and reranker models are registered the same way.
+
+Profiles reference a model by tag **and** digest. At startup, and before an eval run, the adapter checks that the served model matches the pinned digest, and refuses to run on a mismatch. A silent `ollama pull` that changes the weights under a tag would otherwise change results with no record. Hosted models are pinned to a dated model ID, never to an alias that moves.
+
+## Tool-call methods
+
+Two ways to get tool calls out of a model, both implemented in M1.4 behind the same adapter contract:
+
+- **Native tool calling:** tool definitions go in the provider's tool field, and calls come back in its structured tool-call format.
+- **Schema-constrained JSON:** the model is asked for one JSON object matching a schema that covers every allowed action (tool calls, `ask_user`, final answer), with the server's structured-output constraint where the provider supports one.
+
+Each profile names its method. Small local models differ in which method they handle reliably, so the choice is made per model by the M1.6–M1.8 eval, never assumed. Either way, the result is an untrusted proposal that is validated before policy sees it.
+
 ## Request and response
 
 **Request:** profile and deployment, normalised messages, provider-neutral tool definitions, output schema, inference options, deadline, correlation IDs, and an optional data-handling classification.
@@ -47,7 +62,7 @@ More profiles (for example `fast`, `summarizer`, `evaluator`) are added only whe
 
 The router considers: task type and modality, required capabilities, measured quality for that task category, available VRAM and RAM and current load, the deadline, the run budget, local-data policy, and circuit-breaker state.
 
-A fallback never moves private local data to a remote provider on its own. Remote fallback requires an explicit data policy and user configuration.
+**No automatic fallback.** A run never switches to another model or provider because a call failed. The failure is retried within the [retry policy](RUNTIME_SPEC.md#retries) and then surfaced, so every result can be traced to the model that produced it, and a quality or cost difference never hides behind a silent switch. Moving private local data to a remote provider always requires an explicit data policy and user configuration. Restricted data never goes to a hosted model.
 
 The model can suggest delegation; the router and policy decide whether another model call or child run actually happens. Depth, concurrency, budget, tool scope, and deadline are all enforced. The evaluator model is not ground truth and has to be calibrated against reference labels.
 
@@ -96,6 +111,8 @@ Tool calling and structured output vary with the model, prompt, quantisation, ru
 11. Long context: critical instructions survive at 8K, 16K, and 32K.
 12. Summarisation against reference facts.
 
+**Stages.** Experiments run in stages, so expensive runs go only to candidates that survived cheap ones: a screen on a handful of cases (does it fit in memory, call tools, follow the schema), then the dev set to compare and tune, then the held-out test set once to confirm a decision. A result from an earlier stage never stands in for a later one.
+
 **Settings to vary:** thinking on and off (both candidates are thinking models, and all tests so far used `think=false`), and context length 4K, 8K, 16K, then 32K if it fits. Both candidates must fit at a realistic agent context before a profile is chosen. At temperature 0 with a fixed seed, repeat runs are near-identical, so confidence comes from more prompt variants, not more repetitions.
 
 **Record:** model tag and full digest, Ollama version, quantisation, generation parameters, context length, prompt and dataset version, hardware, date, raw JSON responses, and `done_reason`. Keep cold-start and warm measurements separate. Report sample counts and failure examples; never hide a failure inside an aggregate.
@@ -113,6 +130,6 @@ Choose the smallest, fastest model that meets the measured quality and safety ba
 | Option | Consider when |
 |---|---|
 | llama.cpp | Finer control over GGUF quantisation or CPU/GPU placement |
-| vLLM | Throughput and batching matter, on a GPU it supports |
+| vLLM | More than one concurrent user. M3 runs the same load test on Ollama and vLLM behind the adapter, and adopts vLLM if Ollama's throughput is the bottleneck ([decision audit, A5](research/DECISION_AUDIT_2026-11-27.md#a5-ollama-until-m7--amend)). Caveats on this host: 6 GB of VRAM, and vLLM favours AWQ or GPTQ weights over GGUF, so the model files and their digests differ from Ollama's. |
 | Hosted providers | Quality comparison, or tasks beyond local capability. Always optional. |
 | LiteLLM | Enough providers that routing and fallback become a burden in our own adapters |

@@ -1,6 +1,6 @@
 # ADR 0006: In-Process Orchestrator Before Temporal
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR 0018](0018-durable-execution-decided-in-m2.md) on 2026-11-27
 - **Date:** 2026-11-25
 
 ## Context

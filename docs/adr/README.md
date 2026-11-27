@@ -9,7 +9,7 @@ One file per material decision. An ADR is never edited to reverse a decision: wr
 | [0003](0003-python-agent-runtime.md) | Python for the agent runtime | Accepted; version set by 0014 |
 | [0004](0004-model-provider-abstraction.md) | Provider-neutral model gateway, Ollama first | Accepted |
 | [0005](0005-native-tools-and-mcp.md) | One tool contract for native and MCP tools | Accepted |
-| [0006](0006-in-process-before-temporal.md) | In-process orchestrator before Temporal | Accepted |
+| [0006](0006-in-process-before-temporal.md) | In-process orchestrator before Temporal | Superseded by 0018 |
 | [0007](0007-postgresql-system-of-record.md) | PostgreSQL as system of record | Accepted; version and driver open |
 | [0008](0008-execution-isolation-boundary.md) | Separate execution broker for powerful capabilities | Accepted; sandbox open |
 | [0009](0009-local-first-self-hosted.md) | Local-first, self-hosted | Accepted |
@@ -21,6 +21,7 @@ One file per material decision. An ADR is never edited to reverse a decision: wr
 | [0015](0015-pyright.md) | Pyright as the type checker | Accepted |
 | [0016](0016-pydantic-domain-types.md) | Pydantic for domain types | Accepted |
 | [0017](0017-eval-first.md) | Eval-first development and eval methodology | Accepted |
+| [0018](0018-durable-execution-decided-in-m2.md) | Durable execution, decided by experiment in M2.1 | Accepted |
 
 ## Writing one
 
