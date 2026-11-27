@@ -58,6 +58,7 @@ Explanations happen in chat and in the phase's learning note ([docs/learning/](d
 - Name the exact files touched. Avoid unrelated refactors and speculative abstractions.
 - Never claim tests, builds, or benchmarks pass unless you ran them and saw the output. Show the commands and the actual results.
 - Experiments live in the repository as scripts, not as one-off shell sessions.
+- Comments are short and say what the code does or why. History belongs in the commit message or PR: no comments about earlier versions, approaches tried, or things left out. Delete any you find.
 
 ## Engineering standards
 
