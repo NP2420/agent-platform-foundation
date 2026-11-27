@@ -40,8 +40,14 @@ jobs:
       - name: Types
         run: uv run pyright
 
-      - name: Tests
-        run: uv run pytest
+      - name: Tests, with branch coverage
+        run: uv run coverage run -m pytest
+
+      # Reported, not gated (ADR 0022). Markdown table in the job summary.
+      - name: Coverage report
+        run: |
+          uv run coverage report
+          uv run coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
 
   audit:
     name: audit
@@ -61,4 +67,27 @@ jobs:
       # preview feature; the pinned uv version keeps its interface stable.
       - name: Audit dependencies
         run: uv audit --locked --preview-features audit
+
+  licenses:
+    name: licenses
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: "0.13.10"
+          enable-cache: true
+
+      # Runtime dependencies only: dev tools aren't shipped (ADR 0022).
+      - name: Install runtime dependencies and the checker
+        run: uv sync --locked --no-dev --group licenses --exact
+
+      - name: Check licences against the allow-list
+        run: |
+          allowed="$(grep -v -e '^#' -e '^$' licenses-allowed.txt | paste -sd ';')"
+          uv run --no-sync pip-licenses --from=mixed --allow-only="$allowed"
 
