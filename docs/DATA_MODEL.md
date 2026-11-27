@@ -28,6 +28,7 @@
 | `tool_invocations` | Intent, attempt, result, and outcome state |
 | `approvals` | A request and decision tied to one exact action |
 | `artifacts` | Metadata for files produced by runs (bytes stored elsewhere) |
+| `audit_events` | Hash-chained security facts; the application role can only insert and select ([observability spec](OBSERVABILITY_SPEC.md#audit-trail)) |
 | `users`, `folder_grants` | Accounts and per-user approved folders (milestone 3; a single local principal before that) |
 | `documents` | Indexed file: owner, path, size, modification time, content hash, version where known, `language` (detected, BCP 47), `classification` (`public`, `internal`, `restricted`) |
 | `passages` | Searchable chunk of a document with section and line range, and a full-text index |
@@ -79,4 +80,4 @@ PostgreSQL stores the metadata: owner, run, path or object key, media type, size
 
 ## Retention
 
-Retention is defined separately for messages, raw model and tool payloads, audit events, traces, and artifacts. Deletion and redaction keep required audit facts without keeping sensitive content. Raw prompts and tool output are not stored by default when metadata or digests are enough.
+Retention is defined separately for messages, raw model and tool payloads, audit events, traces, and artifacts; the defaults are in the [observability spec](OBSERVABILITY_SPEC.md#retention). Deletion and redaction keep required audit facts without keeping sensitive content. Raw prompts and tool output are not stored by default when metadata or digests are enough.
