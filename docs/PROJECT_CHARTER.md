@@ -54,7 +54,7 @@ Two corpora: public documents (this repository's docs and the PostgreSQL manual)
 | File access | Allowlist; sensitive paths always blocked | Accepted |
 | Interface | CLI, then API; web UI after multi-user | Accepted |
 | Runtime language | Python | Accepted |
-| Database | PostgreSQL; major version open | Accepted |
+| Database | PostgreSQL 18 ([ADR 0019](adr/0019-search-architecture.md)) | Accepted |
 | Workflow | Branches, PRs, CI; assistant writes, owner reviews and merges ([ADR 0013](adr/0013-pull-request-workflow.md)) | Accepted |
 | Licence | Apache-2.0 | Accepted |
 
@@ -66,7 +66,7 @@ One narrow path, end to end, measured:
 - it runs through the real runtime: run state machine, model adapter, tool registry, policy check;
 - a read-only search tool scoped to one approved folder finds the relevant passages;
 - the answer cites file and section, or says the documents don't support an answer;
-- a 25–40 question evaluation set (drafted by the assistant, verified by the owner) reports answer accuracy, citation correctness, and abstention;
+- an evaluation set of about 160 cases in eight categories (drafted by the assistant, verified by the owner) reports answer accuracy, citation correctness, abstention, and clarification behaviour ([ADR 0017](adr/0017-eval-first.md#amendment-2026-11-27));
 - the same set is run on a local model and a hosted model, with cost and latency for each;
 - all of it is deterministic-testable with fake adapters.
 
@@ -84,7 +84,7 @@ Later milestones are in the [roadmap](DEVELOPMENT_ROADMAP.md).
 | Reliability | Retry, idempotency, cancellation, and recovery tests |
 | Portability | The stack starts from a clean Linux host with only configuration changes |
 
-Numeric targets are set after the first measured baseline.
+Numeric targets are set after the first measured baseline, in `docs/SERVICE_OBJECTIVES.md`, written at the end of M1.7.
 
 ## Constraints
 
