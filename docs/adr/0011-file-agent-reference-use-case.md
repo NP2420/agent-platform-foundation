@@ -27,7 +27,7 @@ Retrieval starts as full-text search. Embeddings are added only if the milestone
 
 ## Consequences
 
-- Phase 5's first real tool is file search, with path-scope tests from the start.
+- M1.5's first real tool is file search, with path-scope tests from the start.
 - The evaluation spec gains citation-correctness and abstention metrics.
 - Documents carry a path, a modification time, and, where known, a version.
 - Write and execute capabilities each need their own milestone and security gate.

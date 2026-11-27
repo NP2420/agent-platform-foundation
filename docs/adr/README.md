@@ -20,6 +20,7 @@ One file per material decision. An ADR is never edited to reverse a decision: wr
 | [0014](0014-python-toolchain.md) | Python 3.15, uv, Ruff, pytest, CI | Accepted; type checker superseded by 0015 |
 | [0015](0015-pyright.md) | Pyright as the type checker | Accepted |
 | [0016](0016-pydantic-domain-types.md) | Pydantic for domain types | Accepted |
+| [0017](0017-eval-first.md) | Eval-first development and eval methodology | Accepted |
 
 ## Writing one
 

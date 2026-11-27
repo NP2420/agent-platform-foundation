@@ -1,6 +1,6 @@
 # Tools
 
-**Status:** Native and MCP tools are accepted. Contracts are finalised before Phase 5.
+**Status:** Native and MCP tools are accepted. Contracts are finalised in M1.5.
 
 ## Responsibilities
 

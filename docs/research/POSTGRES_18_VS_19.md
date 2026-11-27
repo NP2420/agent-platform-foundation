@@ -1,6 +1,6 @@
 # Research Note: PostgreSQL 18 vs 19
 
-**Snapshot:** 2026-11-25 · **Decision:** Open; decided in Phase 7.
+**Snapshot:** 2026-11-25 · **Decision:** Open; decided in M2.1.
 
 ## Facts
 
@@ -44,4 +44,4 @@ Choose **19** if drivers, migrations, backup, and extensions all work, there are
 
 Choose **18.x** if the ecosystem is materially more mature there, 19 shows blockers, or the new features don't matter yet.
 
-Default until tested: 18.x as the conservative candidate. Use the latest 18 patch available when Phase 7 starts.
+Default until tested: 18.x as the conservative candidate. Use the latest 18 patch available when M2.1 starts.

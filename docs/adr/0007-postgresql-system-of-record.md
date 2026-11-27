@@ -1,6 +1,6 @@
 # ADR 0007: PostgreSQL as System of Record
 
-- **Status:** Accepted; major version and driver open (decided in Phase 7)
+- **Status:** Accepted; major version and driver open (decided in M2.1)
 - **Date:** 2026-11-25
 
 ## Context

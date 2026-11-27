@@ -5,7 +5,7 @@
 
 ## Context
 
-Phase 2 defines the core types: runs, steps, messages, tool calls, model results, events. The architecture said the domain imports no frameworks. The owner's goal is learning production AI engineering; dependencies are acceptable, and building something by hand is worthwhile only where it teaches something.
+M1.2 defines the core types: runs, steps, messages, tool calls, model results, events. The architecture said the domain imports no frameworks. The owner's goal is learning production AI engineering; dependencies are acceptable, and building something by hand is worthwhile only where it teaches something.
 
 ## Options considered
 
@@ -30,7 +30,7 @@ API request and response models stay separate from domain models wherever their 
 - The platform is schema-heavy: tool definitions are JSON Schema; tool calls, structured outputs, events, and API bodies are JSON in both directions.
 - Validation runs whenever an object is built, including when it's rebuilt from storage or events.
 - It is the standard in AI Python codebases, so the skill transfers.
-- The learning in Phase 2 is the state machine, which is the same with any of the three; hand-written validators would add boilerplate, not understanding.
+- The learning in M1.2 is the state machine, which is the same with any of the three; hand-written validators would add boilerplate, not understanding.
 
 ## Consequences
 

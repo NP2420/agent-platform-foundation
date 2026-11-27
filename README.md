@@ -14,7 +14,7 @@ A self-hosted agent platform, built from first principles to practise production
 
 ## Where things stand
 
-Phase 0 is done: the host is characterised, local models are screened, and the goal is agreed. Milestone 1 (cited answers from the CLI) starts with the Phase 1 toolchain. See the status table in [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md).
+Phase 0 and M1.1 (toolchain and CI) are done. Milestone 1 (cited answers from the CLI) continues with M1.2, the domain types and run state machine. See the status table in [`docs/DEVELOPMENT_ROADMAP.md`](docs/DEVELOPMENT_ROADMAP.md).
 
 ## Documentation
 

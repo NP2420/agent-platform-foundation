@@ -49,17 +49,21 @@ Recheck versions when implementing.
 
 ## Reading by phase
 
+Read before the phase starts. Chapter numbers are approximate; check them against your edition.
+
 | Phase | Reading |
 |---|---|
-| 1 Toolchain | Python and uv docs; GitHub Actions docs |
-| 2 Domain contracts | DDIA 1–2, 5, 8; JSON Schema |
-| 3–4 Model adapters, loop | AI Engineering 1–4, 9–10; Ollama and Anthropic API docs; Anthropic agent articles |
-| 5 Tools and file search | Anthropic tools article; PostgreSQL full-text search chapter; Secure & Reliable Systems |
-| 6 Evaluation | AI Engineering 3–4, 8; retrieval evaluation literature |
-| 7 Persistence | DDIA 3–5, 8–10; PostgreSQL and SQLAlchemy docs |
-| 8–9 API, observability | SSE spec; OpenTelemetry docs; SRE monitoring chapters |
-| 10–11 Identity, approvals | OWASP authentication and session cheat sheets; Secure & Reliable Systems |
-| 12–14 Writes, orchestrator | DDIA 8–9; OSTEP concurrency; asyncio docs |
-| 15 MCP | MCP spec and SDK docs |
-| 16 Sandbox | OSTEP virtualisation; TLPI; Landlock, gVisor, Firecracker docs |
+| M1.1 Toolchain | Python and uv docs; GitHub Actions docs |
+| M1.2 Domain types, state machine | [*Architecture Patterns with Python*, ch. 1: Domain Modeling](https://www.cosmicpython.com/book/chapter_01_domain_model.html); Pydantic [strict mode](https://pydantic.dev/docs/validation/latest/concepts/strict_mode/) and [models](https://pydantic.dev/docs/validation/latest/concepts/models/) (frozen models); Hypothesis [stateful testing](https://hypothesis.readthedocs.io/en/latest/stateful.html) |
+| M1.3 Evals | AI Engineering 3–4; Inspect AI and promptfoo docs; confidence intervals for proportions |
+| M1.4 Model adapters | AI Engineering 5, 9; Ollama and Anthropic API docs on tool use and structured output |
+| M1.5 Threat model, tools, search | OWASP Top 10 for LLM Applications; STRIDE threat modelling; PostgreSQL full-text search chapter; Anthropic tools article |
+| M1.6–M1.7 Pipeline, agent loop | AI Engineering 6; Anthropic *Building effective agents* |
+| M1.8 Comparison, feedback | AI Engineering 8, 10; published model and system cards |
+| M2.1 Persistence | DDIA 3–5, 8–10; PostgreSQL and SQLAlchemy docs |
+| M2.2–M2.3 API, tracing | SSE spec; OpenTelemetry docs; SRE monitoring chapters |
+| M3.1–M3.2 Identity, approvals | OWASP authentication and session cheat sheets; Secure & Reliable Systems |
+| M4.1–M4.3 Writes, orchestrator | DDIA 8–9; OSTEP concurrency; asyncio docs |
+| M4.4 MCP | MCP spec and SDK docs |
+| M5.1 Sandbox | OSTEP virtualisation; TLPI; Landlock, gVisor, Firecracker docs |
 | Release review | SRE; Secure & Reliable Systems |
