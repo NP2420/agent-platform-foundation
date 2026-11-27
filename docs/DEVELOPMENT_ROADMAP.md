@@ -17,7 +17,7 @@ This table is the single place that tracks project status.
 
 **Next steps**
 
-1. Finish recording the agreed decisions: this plan and the eval methodology; runtime and model decisions; the observability spec; CI hardening.
+1. Finish recording the agreed decisions, as amended by the [decision audit](research/DECISION_AUDIT_2026-11-27.md): runtime and model; observability, logging, audit and retention; retrieval and data; security and identity; CI hardening and releases.
 2. M1.2: design the domain types and run state machine for approval, after the [phase reading](LEARNING_PATH_AND_SOURCES.md#reading-by-phase).
 
 Carried over from model screening, for M1.3 and M1.4: rerun the thinking-on context test with `--num-predict 512`; record Ollama's flash-attention and KV-cache settings; rerun the one stalled Nemotron row.
@@ -44,7 +44,7 @@ Python 3.15, uv, Ruff, Pyright, pytest, CI, pre-commit ([ADR 0014](adr/0014-pyth
 
 ### M1.2: Domain types and run state machine
 
-Pydantic domain types ([ADR 0016](adr/0016-pydantic-domain-types.md)) for runs, steps, messages, tool calls, model results, events, errors, and the principal. The run state machine with `QUEUED`, `RUNNING`, `WAITING_APPROVAL`, `CANCELLING`, `CANCELLED`, `COMPLETED`, and `FAILED` with reasons. UUIDv7 IDs. Structured logs carrying run and trace IDs. No model, no database.
+Pydantic domain types ([ADR 0016](adr/0016-pydantic-domain-types.md)) for runs, steps, messages, tool calls, model results, events, errors, and the principal. The run state machine with `QUEUED`, `RUNNING`, `WAITING_APPROVAL`, `WAITING_INPUT`, `CANCELLING`, `CANCELLED`, `COMPLETED`, and `FAILED` with reasons. Immutable step records, the unit of later recovery ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)). UUIDv7 IDs. Structured logs carrying run and trace IDs. No model, no database.
 **Exit:** example and Hypothesis stateful tests cover every legal and illegal transition; terminal states never change.
 
 ### M1.3: Eval harness and first cases
@@ -54,7 +54,7 @@ Case format, dev / held-out test / regression splits, code-based scoring (citati
 
 ### M1.4: Model adapters
 
-Provider-neutral contract; Ollama, Anthropic API, and fake adapters; both tool-call methods (native tool calling and schema-constrained JSON); timeouts, normalised errors, per-call tokens, cost, and latency. Recorded responses in CI; a live suite run in WSL. Prompts as versioned files. Choose the hosted model and spend limit.
+Provider-neutral contract; Ollama, Anthropic API, and fake adapters; both tool-call methods (native tool calling and schema-constrained JSON); timeouts, bounded retries with jitter, normalised errors, per-call tokens, cost, and latency. Model registry with licences, and profiles pinned by digest. Recorded responses in CI; a live suite run in WSL. Prompts as versioned files. Choose the hosted model and spend limit.
 **Exit:** contract tests pass on recordings and live against both real providers.
 
 ### M1.5: Threat model, tools, policy, and file search
@@ -74,12 +74,12 @@ The model decides when and what to search. Bounded loop, context assembly, hard 
 
 ### M1.8: CLI, feedback, comparison, and review
 
-CLI client; per-answer feedback with a script that turns bad answers into draft cases; the LLM judge, checked against the owner's labels; the four-way comparison (pipeline vs agent × two tool-call methods); cases grown to ~25 per category; a private eval set over a personal folder in `evals/private/`; the system card.
+CLI client (Typer); per-answer feedback with a script that turns bad answers into draft cases; the LLM judge, checked against the owner's labels; the four-way comparison (pipeline vs agent × two tool-call methods); cases grown to ~25 per category; a private eval set over a personal folder in `evals/private/`; the system card.
 **Exit:** comparison report, system card, milestone review, and release `v0.1.0`.
 
-### After milestone 1: LangGraph comparison
+### After milestone 1: framework comparison
 
-Rebuild the milestone 1 agent on LangGraph, time-boxed, and compare it on the same eval set. Written up as a learning note.
+Rebuild the milestone 1 agent on LangGraph and on Pydantic AI, time-boxed, and compare both with our own loop on the same eval set: results, code size, typing, tracing, and what each takes control of. Written up as a learning note.
 
 ## Milestone 2: persisted runs, API, and observability
 
@@ -87,9 +87,9 @@ Rebuild the milestone 1 agent on LangGraph, time-boxed, and compare it on the sa
 
 ### M2.1: PostgreSQL persistence
 
-Schema, migrations, repositories, transaction boundaries, run and event persistence, idempotency records, document index tables. Review the API and data-model specs first.
+Schema, migrations, repositories, transaction boundaries, run, step, and event persistence, idempotency records, document index tables. Review the API and data-model specs first. Then the durability experiment from [ADR 0018](adr/0018-durable-execution-decided-in-m2.md): our own step log, DBOS, and Temporal, each killed mid model call, mid tool call, and during an approval wait.
 **Decide:** PostgreSQL 18 vs 19 ([research note](research/POSTGRES_18_VS_19.md)); psycopg 3 vs asyncpg.
-**Exit:** tests cover conflicts, restart recovery, uniqueness, and concurrent access.
+**Exit:** tests cover conflicts, restart recovery, uniqueness, and concurrent access; the durability mechanism is chosen and recorded in an ADR, with the experiment's results.
 
 ### M2.2: API and event streaming
 
@@ -114,6 +114,11 @@ Local accounts, password or token authentication, sessions, per-user folder gran
 
 Approval requests bound to exact actions, with expiry. A minimal local web page to ask questions, browse runs, give feedback, and approve or deny.
 **Exit:** approval replay, argument mutation, and expiry tests pass.
+
+### M3.3: Serving under load
+
+Load-test the local model server with several concurrent users: Ollama and vLLM behind the same adapter, the same model in each server's preferred format, measuring throughput, time to first token, and p95 latency.
+**Exit:** the serving choice for multi-user use, recorded with its numbers.
 
 ## Milestone 4: write actions and MCP
 
@@ -147,7 +152,11 @@ Structured execution requests, per-run workspaces, worker identity, resource and
 **Decide:** the sandbox backend ([research note](research/LOCAL_SANDBOX_OPTIONS.md)), including KVM feasibility. It must run on a plain Linux host, not only WSL.
 **Exit:** negative tests show filesystem, network, process, and resource access outside the grant is blocked. No arbitrary execution before this.
 
-## Milestone 6: enterprise profile
+## Milestone 6: browser
+
+**Delivers:** read-only browsing of user-approved sites through the execution broker: fetching and reading pages, following links within the grant, and citing pages like documents. The browser runs in the M5 sandbox with its own profile, never the user's signed-in browser. CAPTCHAs and other bot checks are never bypassed; the run stops and asks the user. Web content is untrusted input under the same injection defences as documents. Scoped in detail when the milestone starts, with the threat model updated first.
+
+## Milestone 7: enterprise profile
 
 **Delivers:** the same system in the shape a large company would run it, using free local stand-ins. Candidate tools: Keycloak (SSO), OpenSearch or PGroonga (Japanese search), vLLM behind a model gateway, kind or k3d with Terraform, Langfuse; classification and export-control policy; Japanese eval cases. Tools are chosen when the milestone starts. Scope is in the [enterprise gap note](research/ENTERPRISE_GAP.md).
 
@@ -164,7 +173,6 @@ Each needs a measured reason before it starts.
 - **Context compaction and memory:** when runs exceed the usable context in measured cases.
 - **Tiered model routing:** when one model per profile measurably costs too much or fails a task category.
 - **Subagents:** when delegation measurably improves success on chosen evals.
-- **Temporal:** when durable timers, long approvals, or multi-worker recovery are needed and a failure-injection test shows the gap.
 
 ## Release review
 

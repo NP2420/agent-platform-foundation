@@ -11,7 +11,7 @@ Dated findings that shaped decisions. Each entry is short and links to the resea
 | R-005 | Which local models, for which profiles? | Versioned tool-use suite, context scaling, resource use | M1.8 |
 | R-006 | Which sandbox backend? | Threat model and negative tests on a Linux host | M5.1 |
 | R-007 | Which MCP SDK and protocol revision? | Release notes, migration guide, contract test | M4.4 |
-| R-008 | Is Temporal justified? | Durability requirements, failure-injection comparison | Later |
+| R-008 | Which durable execution mechanism: our own step log, DBOS, or Temporal? | Failure-injection experiment ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)) | M2.1 |
 | R-009 | Do tiered models beat one model? | Same cases and hardware, cost vs quality | Later |
 | R-010 | Which observability backend? | Usefulness vs local resource cost | M2.3 |
 | R-011 | Is full-text search enough, or are embeddings needed? | Milestone 1 eval: retrieval misses by cause | M1.8 |
@@ -57,7 +57,7 @@ Through a question-and-answer session with the owner: the purpose is practising 
 
 ### 2026-11-26: Enterprise gap
 
-Mapped what would change if this ran as a production application at a large manufacturer, with Komatsu as the example: SSO, source-system connectors, multilingual search (PostgreSQL full-text can't segment Japanese), a model gateway with data residency, Kubernetes and IaC, compliance including export control. Planned as milestone 6 with free local stand-ins. Taken now: `language` and `classification` fields on documents, with policy able to keep a class away from hosted models. → [note](research/ENTERPRISE_GAP.md)
+Mapped what would change if this ran as a production application at a large manufacturer, with Komatsu as the example: SSO, source-system connectors, multilingual search (PostgreSQL full-text can't segment Japanese), a model gateway with data residency, Kubernetes and IaC, compliance including export control. Planned as milestone 7 with free local stand-ins (renumbered from 6 on 2026-11-27, when browser became milestone 6). Taken now: `language` and `classification` fields on documents, with policy able to keep a class away from hosted models. → [note](research/ENTERPRISE_GAP.md)
 
 ### 2026-11-26: Where the working copy lives
 
@@ -82,3 +82,7 @@ Reordered milestone 1 eval-first: the eval harness comes right after the domain 
 Question, sources (with dates and versions), facts, experiment and results,
 interpretation, decision or status, revisit trigger. Link the note or ADR.
 ```
+
+### 2026-11-27: Decision audit
+
+Checked decisions 1–91 against vendor docs, papers, and production practice. 20 findings; the owner accepted every proposed change. The largest: durable execution decided by experiment in M2.1 ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)), PostgreSQL 18 now (pg_textsearch supports 17 and 18), a reranker arm in retrieval, the injection classifier demoted to telemetry, a trace viewer in M2, and one page of service objectives after the M1.6 baseline. → [audit](research/DECISION_AUDIT_2026-11-27.md)

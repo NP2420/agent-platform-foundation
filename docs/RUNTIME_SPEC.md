@@ -1,10 +1,14 @@
 # Runtime and Orchestration
 
-**Status:** Proposed. Internal types and serialisation are designed in M1.2. The scheduler and plan schema are finalised in M4.2.
+**Status:** Proposed. Internal types and serialisation are designed in M1.2. The durability mechanism is chosen in M2.1 ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)). The scheduler and plan schema are finalised in M4.2.
 
 ## Runtime responsibility
 
 The runtime executes one bounded run. It builds context, calls the model, normalises the response, validates and authorises tool requests, dispatches them, updates state, and decides when the run is done. It does not grant permissions, run arbitrary code, or allocate unbounded resources.
+
+## Synchronous domain, asynchronous runtime
+
+The domain layer (types, the run state machine, policy decisions, budget accounting) is synchronous and does no I/O, so it can be tested exhaustively without an event loop. The runtime around it is asynchronous: model calls, tool calls, timers, and cancellation run on `asyncio` under a `TaskGroup` that owns every task it starts. The runtime calls into the domain to decide; the domain never awaits.
 
 ## Run inputs
 
@@ -19,6 +23,8 @@ The runtime executes one bounded run. It builds context, calls the model, normal
 
 ## The loop
 
+The loop is ReAct-style: the model reasons, proposes an action (a tool call, a question to the user, or a final answer), the runtime carries it out under policy, and the observation goes back into context. Tool calls arrive either as native tool calls or as schema-constrained JSON, depending on the profile ([model spec](MODEL_SPEC.md#tool-call-methods)); the loop is the same for both.
+
 ```text
 while run is RUNNING and budget remains:
     context  = context_manager.build(run, budget)
@@ -28,6 +34,10 @@ while run is RUNNING and budget remains:
 
     if response is final:
         check output policy, persist message, complete run
+
+    elif response asks the user a question:
+        if clarification cap not reached: persist question, move to WAITING_INPUT
+        else: tell the model to answer with stated assumptions, or abstain
 
     elif response has tool calls:
         for each call: validate name and arguments, ask policy
@@ -53,6 +63,7 @@ The provider adapter returns content blocks, zero or more tool-call proposals, a
 | `QUEUED` | Accepted, not started |
 | `RUNNING` | May call the model or dispatch work |
 | `WAITING_APPROVAL` | Blocked on a human or policy decision |
+| `WAITING_INPUT` | Blocked on the user's answer to a clarifying question |
 | `WAITING_EXTERNAL` | Blocked on a defined external signal. Add only when needed. |
 | `COMPLETED` | Terminal success |
 | `FAILED` | Unrecoverable error, or recovery exhausted |
@@ -62,6 +73,14 @@ The provider adapter returns content blocks, zero or more tool-call proposals, a
 A deadline or budget overrun is a **reason on `FAILED`**, not its own state: `FAILED` carries a terminal reason such as `deadline_exceeded`, `budget_exhausted`, or `error` (decided 2026-11-26). New failure kinds add a reason, not a state.
 
 Terminal states never change, apart from an explicit administrative correction record. Transitions are validated in application code and covered by tests.
+
+## Clarification
+
+The model asks the user a question through a reserved `ask_user` action, never as free text that the runtime has to guess at. Questions are limited per run by a configurable cap, default 4. Once the cap is reached, the model has to answer with its assumptions stated, or abstain. The question count goes on the run's trace, and the eval reports how often the agent asks when it didn't need to ([decision audit, A17](research/DECISION_AUDIT_2026-11-27.md#a17-clarification-cap--keep-the-cap-measure-over-asking)). A cancelled or expired `WAITING_INPUT` run ends `CANCELLED` or `FAILED` with a reason, like any other wait.
+
+## Step records
+
+Every completed model call, tool call, approval decision, and user answer becomes an immutable step record: step ID (UUIDv7), run ID, kind, a digest of its inputs, outcome (succeeded, failed, cancelled, or unknown), timings, and usage where measured. Step records are the unit of recovery: after a restart, a run resumes from its last recorded step, and an operation that started without a recorded outcome is treated as unknown, never as not done. Milestone 1 keeps them in memory; M2.1 persists them using the mechanism [ADR 0018](adr/0018-durable-execution-decided-in-m2.md) selects.
 
 ## Error classes
 
@@ -78,9 +97,15 @@ Terminal states never change, apart from an explicit administrative correction r
 
 Errors shown to the model are sanitised. Logs carry full structured context, subject to redaction.
 
+## Retries
+
+Only the transient classes above are retried: rate limits, transient provider errors, and timeouts on calls known to be safe to repeat. Retries use exponential backoff with full jitter, a bounded number of attempts, and a total time cap inside the run's deadline. A `Retry-After` from the provider is honoured when it falls within that cap; otherwise the call fails. Each attempt is recorded. There is no automatic fallback: a failed call never moves to another model or provider on its own ([model spec](MODEL_SPEC.md#routing)). Writes are never retried automatically.
+
 ## Budgets
 
-Per run: wall-clock time, model calls, tool calls, tool concurrency, tokens where measurable, delegation depth, per-tool timeout, external calls, and output size. Accounting is monotonic and correct under concurrency. The model cannot raise its own budget.
+Per run: wall-clock time, model calls, tool calls, tool concurrency, tokens where measurable, clarifying questions, delegation depth, per-tool timeout, external calls, and output size. Accounting is monotonic and correct under concurrency. The model cannot raise its own budget.
+
+**Defaults.** Until the M1.6 baseline exists, defaults are provisional and generous, and reaching one is logged as a finding. After the baseline, each default is set to about twice the measured p99 for the eval set, and revisited when the workload changes. A budget that real runs never approach catches nothing; one set at the median fails healthy runs.
 
 ## Cancellation
 
@@ -137,13 +162,13 @@ Local orchestration cannot guarantee exactly-once side effects on external syste
 
 A child agent is a child run with: a parent reference, explicitly scoped tools and permissions, its own budgets, isolated context by default (with explicit handoff of selected content), depth and fan-out limits, propagated cancellation, and a result contract. It never inherits the parent's full authority.
 
-### Temporal boundary (later, on evidence)
+### Durability boundary
 
-The scheduler exposes application-level operations: start plan, execute ready node, record outcome, request approval, resume. Temporal, if adopted, implements that port. Workflow code must be deterministic; side effects go in activities. Activities can retry, so tools still need idempotency.
+The scheduler exposes application-level operations: start plan, execute ready node, record outcome, request approval, resume. The durability mechanism chosen in M2.1 implements that port ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)). If it is Temporal, workflow code must be deterministic and side effects go in activities. Whatever it is, a step can run again if its outcome wasn't recorded, so tools still need idempotency.
 
 ## Testing
 
 Core runtime and scheduler tests use fake model and tool adapters, with no inference server. Required scenarios:
 
-- **Runtime:** final answer; tool call followed by final answer; multiple tool calls; malformed arguments; refusal; provider timeout; cancellation; budget exhaustion; approval pause and resume.
+- **Runtime:** final answer; tool call followed by final answer; multiple tool calls; malformed arguments; refusal; provider timeout; cancellation; budget exhaustion; approval pause and resume; clarification pause and resume, and the cap; retries stay within attempt and time bounds and honour `Retry-After`; no retry on permanent errors; every completed step leaves exactly one step record.
 - **Scheduler:** sequential and parallel DAGs; rejection of cycles, missing dependencies, duplicates, and bad schemas; the concurrency cap is never exceeded; a node never starts before its dependencies; failure propagation follows the policy; cancellation leaves no orphaned tasks; the deadline stops new work; behaviour on duplicate operations is explicit.

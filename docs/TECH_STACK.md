@@ -37,7 +37,7 @@ Ollama 0.40.18 on Windows, reached from WSL at `127.0.0.1:11434` over mirrored n
 
 Adapters in milestone 1: Ollama, Anthropic API (optional, prepaid Console balance with a hard limit), and a fake adapter for tests. Use the official Anthropic Python SDK. Two real providers from the start keep the abstraction honest. No gateway proxy until the complexity calls for one.
 
-**Later options:** llama.cpp, vLLM, other hosted providers, LiteLLM.
+**Later options:** vLLM when there are concurrent users (load-tested in M3), llama.cpp, other hosted providers, LiteLLM. Models are pinned by digest and listed in a licence registry ([model spec](MODEL_SPEC.md#model-registry-licences-and-pinning)).
 
 ## Tools
 
@@ -47,9 +47,13 @@ Native Python tools go through our dispatcher. MCP uses the official Python SDK,
 
 **Initial:** our own in-process scheduler on asyncio (TaskGroup, semaphores, bounded queues), with explicit plan and state contracts. TaskGroup is a structured-concurrency primitive, not a workflow engine.
 
-**Later:** Temporal's Python SDK, if long-running, resumable, multi-worker workflows appear.
+**Durability:** chosen in M2.1 by a failure-injection experiment between our own PostgreSQL step log, DBOS, and Temporal ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)).
 
-**Alternatives:** Celery, RQ, or BullMQ for independent background jobs; LangGraph for graph-shaped agent state; Prefect or Dagster for data workflows.
+**Alternatives:** Celery, RQ, or BullMQ for independent background jobs; LangGraph or Pydantic AI for agent state and loops (both compared after milestone 1); Prefect or Dagster for data workflows.
+
+## CLI
+
+Typer, as a thin client: it parses arguments, calls the runtime (an API client from milestone 2), and renders events. No agent or policy logic lives in the CLI.
 
 ## Testing and quality
 
@@ -76,13 +80,13 @@ Native Python tools go through our dispatcher. MCP uses the official Python SDK,
 
 | Technology | Reconsider when |
 |---|---|
-| Temporal | Durable timers, long approval waits, replay, or multi-worker execution are needed |
+| Temporal, DBOS | Compared in M2.1 ([ADR 0018](adr/0018-durable-execution-decided-in-m2.md)); adopted only if one wins the recovery experiment |
 | Redis | A measured need for caching, ephemeral coordination, or a queue |
 | Kafka / NATS | Independent consumers or fan-out outgrow PostgreSQL-backed events |
 | Kubernetes | Several services and replicas justify the operational overhead |
 | Vector DB | Retrieval scale or latency outgrows PostgreSQL (full-text, pgvector) |
 | Go / Rust | A profiled bottleneck, native integration, or sandbox requirement |
-| LangGraph | Its graph primitives would outweigh handing it control of execution |
+| LangGraph, Pydantic AI | The post-milestone-1 comparison shows one beats our own loop on the same evals by enough to justify the dependency |
 | LiteLLM | Multi-provider routing becomes painful in our own adapters |
 
 ## Decision rule

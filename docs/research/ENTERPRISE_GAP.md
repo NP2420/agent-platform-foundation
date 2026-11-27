@@ -1,6 +1,6 @@
 # Research Note: Enterprise Gap
 
-**Snapshot:** 2026-11-26 · **Status:** Reference for milestone 6; nothing here is being built yet.
+**Snapshot:** 2026-11-26 · **Status:** Reference for milestone 7; nothing here is being built yet.
 
 ## Question
 
@@ -12,7 +12,7 @@ The runtime and run state machine, policy outside the model, provider adapters, 
 
 ## What changes
 
-| Area | This project | Enterprise production | Local stand-in for milestone 6 |
+| Area | This project | Enterprise production | Local stand-in for milestone 7 |
 |---|---|---|---|
 | Identity | Local accounts | SSO through Entra ID (OIDC/SAML), automatic provisioning (SCIM), roles separating employees, dealers, and customers; document permissions mirrored from source systems | Keycloak |
 | Data sources | Approved local folders | Connectors to SharePoint and document management, telematics APIs (Komtrax), PLM and dealer systems; continuous ingestion; documents versioned per machine model and serial range | A connector interface with a mock document-management service |
@@ -34,4 +34,4 @@ Two cheap choices keep this path open:
 - **Documents carry `language` and `classification` fields from milestone 1** ([data model](../DATA_MODEL.md)). Adding them later would mean re-indexing and rewriting policy.
 - **Policy may deny a tool result by classification** ([security spec](../SECURITY_SPEC.md#file-access)), for example keeping `restricted` documents away from a hosted model.
 
-Everything else waits for milestone 6.
+Everything else waits for milestone 7.
